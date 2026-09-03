@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICE·SIGHT FLEET — Hackathon Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#060D16;--panel:#0D1B29;--panel2:#122336;
+  --ice:#6EC9E0;--aurora:#8B7FE8;--danger:#FF6B4A;--safe:#5EEAD4;--amber:#F2B347;
+  --text:#EAF3F8;--muted:#8CA3B4;--dim:#526375;
+  --disp:'Space Grotesk',sans-serif;--body:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body);}
+
+/* ── Slide system ── */
+.deck{position:relative;width:100%;height:100%;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 64px;opacity:0;pointer-events:none;transition:opacity .45s ease,transform .45s ease;transform:translateY(12px);}
+.slide.active{opacity:1;pointer-events:auto;transform:translateY(0);}
+.slide-inner{width:100%;max-width:1100px;}
+
+/* ── Nav ── */
+.nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;
+  background:rgba(13,27,41,.92);border:1px solid rgba(139,178,201,.18);border-radius:100px;padding:8px 20px;
+  backdrop-filter:blur(12px);z-index:100;font-family:var(--mono);font-size:12px;color:var(--muted);}
+.nav button{background:none;border:none;color:var(--ice);cursor:pointer;font-size:18px;padding:4px 10px;border-radius:6px;transition:background .15s;}
+.nav button:hover{background:rgba(110,201,224,.12);}
+.nav .counter{min-width:50px;text-align:center;}
+.logo{position:fixed;top:20px;left:24px;z-index:200;height:48px;background:#fff;border-radius:10px;padding:6px 10px;box-shadow:0 2px 12px rgba(0,0,0,.4);transition:transform .2s;}
+.logo:hover{transform:scale(1.05);}
+
+/* ── Typography ── */
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice);margin-bottom:12px;}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(32px,5vw,56px);line-height:1.1;letter-spacing:-.02em;margin-bottom:16px;}
+h1 span{color:var(--ice);}
+h2{font-family:var(--disp);font-weight:600;font-size:clamp(24px,3.2vw,36px);margin-bottom:12px;letter-spacing:-.01em;}
+h3{font-family:var(--disp);font-weight:600;font-size:18px;margin-bottom:10px;color:var(--ice);}
+.sub{color:var(--muted);font-size:16px;max-width:700px;line-height:1.6;}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:5px 14px;border-radius:100px;border:1px solid rgba(139,178,201,.25);color:var(--muted);margin:4px 4px 0 0;}
+
+/* ── Layout helpers ── */
+.cols{display:grid;gap:28px;align-items:start;}
+.cols-2{grid-template-columns:1fr 1fr;}
+.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.card{background:var(--panel);border:1px solid rgba(139,178,201,.12);border-radius:14px;padding:24px;}
+.card h3{margin-bottom:14px;}
+.stat-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
+.stat-num{font-family:var(--disp);font-weight:700;font-size:36px;color:var(--ice);}
+.stat-label{font-size:13px;color:var(--muted);}
+canvas.chart{width:100%;height:auto;display:block;border-radius:8px;margin-top:8px;}
+.chart-title{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+
+/* ── Simulator embed ── */
+.sim-wrap{width:100%;border-radius:12px;overflow:hidden;border:1px solid rgba(139,178,201,.15);background:#000;}
+.sim-wrap iframe{width:100%;height:70vh;border:none;display:block;}
+
+/* ── Image ── */
+.qa-img{width:100%;max-height:68vh;object-fit:contain;border-radius:10px;border:1px solid rgba(139,178,201,.12);}
+
+/* ── Table ── */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;font-family:var(--mono);}
+.data-table th{text-align:left;padding:8px 12px;border-bottom:2px solid rgba(139,178,201,.2);color:var(--ice);font-weight:500;}
+.data-table td{padding:7px 12px;border-bottom:1px solid rgba(139,178,201,.08);color:var(--muted);}
+.data-table tr:hover td{color:var(--text);background:rgba(110,201,224,.04);}
+.tag-high{color:#FF6B4A;} .tag-mod{color:#F2B347;} .tag-low{color:#5EEAD4;}
+
+/* ── Keyframes ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .6s ease both;}
+</style>
+</head>
+<body>
+
+<img src="logo.png" class="logo" alt="Code Covenants">
+<div class="deck" id="deck">
+
+<!-- ════════════════════ SLIDE 1: Title ════════════════════ -->
+<div class="slide active" data-slide="0">
+<div class="slide-inner" style="text-align:center;">
+  <p class="eyebrow">AI-Enabled Antarctic Navigation Decision Support · Fleet Edition</p>
+  <h1 style="font-size:clamp(36px,6vw,64px);">ICE<span>·</span>SIGHT <span>FLEET</span></h1>
+  <p class="sub" style="margin:0 auto 28px;">Multi-iceberg, multi-ship navigation simulator with real-time collision prediction, live weather integration, and Monte Carlo uncertainty analysis.</p>
+  <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;">
+    <span class="pill">300 Scenarios</span>
+    <span class="pill">50 Monte Carlo Runs Each</span>
+    <span class="pill">Real Weather API</span>
+    <span class="pill">Collision Detection</span>
+    <span class="pill">15,000 Drift Trajectories</span>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 2: Problem ════════════════════ -->
+<div class="slide" data-slide="1">
+<div class="slide-inner">
+  <p class="eyebrow">The Challenge</p>
+  <h2>Navigating Iceberg-Infested Waters</h2>
+  <div class="cols cols-2" style="margin-top:20px;">
+    <div>
+      <p class="sub" style="margin-bottom:20px;">Antarctic and sub-Antarctic shipping lanes face growing iceberg incursion risk as climate patterns shift. Current decision support tools provide static risk maps — not dynamic, ship-specific forecasting.</p>
+      <div class="card">
+        <h3>Why It Matters</h3>
+        <p style="color:var(--muted);font-size:14px;line-height:1.7;">
+          • ~$2B+ in Antarctic shipping annually<br>
+          • Iceberg incursions increasing 30% per decade<br>
+          • 72 hours is the critical decision window<br>
+          • Current tools: manual, slow, not ship-specific
+        </p>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:16px;">
+      <h3>Key Risk Factors</h3>
+      <div class="stat-row"><span class="stat-num">8.8–25.3</span><span class="stat-label">km/day drift speed range across regimes</span></div>
+      <div class="stat-row"><span class="stat-num">56%</span><span class="stat-label">of scenarios classified as HIGH risk</span></div>
+      <div class="stat-row"><span class="stat-num">3–14</span><span class="stat-label">day forecast horizon needed</span></div>
+      <div class="stat-row"><span class="stat-num">50</span><span class="stat-label">Monte Carlo runs per scenario for uncertainty</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 3: Solution ════════════════════ -->
+<div class="slide" data-slide="2">
+<div class="slide-inner">
+  <p class="eyebrow">Our Approach</p>
+  <h2>Real-Time Fleet Simulation with AI Decision Support</h2>
+  <div class="cols cols-3" style="margin-top:20px;">
+    <div class="card">
+      <h3>🌊 Dynamic Drift Model</h3>
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.65;">
+        Monte Carlo ensemble of iceberg trajectories under three ocean regimes (calm, moderate, storm). Wind/current uncertainty parameters produce 50 plausible drift paths per scenario.
+      </p>
+    </div>
+    <div class="card">
+      <h3>🚢 Fleet-Aware Routing</h3>
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.65;">
+        Each ship follows a distinct route with customizable dimensions. Per-ship danger radius computed from vessel beam. Automatic collision stopping with blast animation.
+      </p>
+    </div>
+    <div class="card">
+      <h3>📡 Live Weather Integration</h3>
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.65;">
+        Open-Meteo API feeds real wind speed, direction, and gusts into the drift model. Wind data adjusts bearing, scales drift velocity, and adds uncertainty.
+      </p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 4: Live Demo ════════════════════ -->
+<div class="slide" data-slide="3">
+<div class="slide-inner">
+  <p class="eyebrow">Interactive Demo</p>
+  <h2 style="margin-bottom:14px;">Live Simulator</h2>
+  <div class="sim-wrap">
+    <iframe src="icesight-fleet-simulator.html" loading="lazy"></iframe>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 5: Dataset Overview ════════════════════ -->
+<div class="slide" data-slide="4">
+<div class="slide-inner">
+  <p class="eyebrow">Synthetic Dataset</p>
+  <h2>300 Scenarios · 15,000 Trajectories</h2>
+  <div class="cols cols-2" style="margin-top:16px;">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3>Dataset Composition</h3>
+        <table class="data-table">
+          <tr><th>Split</th><th>Scenarios</th><th>Purpose</th></tr>
+          <tr><td>Train</td><td>210</td><td>Model training & calibration</td></tr>
+          <tr><td>Val</td><td>45</td><td>Hyperparameter tuning</td></tr>
+          <tr><td>Test</td><td>45</td><td>Final evaluation</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Regime Distribution</h3>
+        <table class="data-table">
+          <tr><th>Regime</th><th>Count</th><th>Drift Speed</th><th>High Risk %</th></tr>
+          <tr><td>🟢 Calm</td><td>95</td><td>8.8 km/day</td><td class="tag-low">44%</td></tr>
+          <tr><td>🟡 Moderate</td><td>105</td><td>15.95 km/day</td><td class="tag-mod">65%</td></tr>
+          <tr><td>🔴 Storm</td><td>100</td><td>25.3 km/day</td><td class="tag-high">60%</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="chart-title">Risk Level Distribution</div>
+        <canvas id="chartRisk" class="chart" width="500" height="280"></canvas>
+      </div>
+      <div class="card">
+        <div class="chart-title">Incursion Probability Distribution</div>
+        <canvas id="chartIncur" class="chart" width="500" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 6: Drift Analysis ════════════════════ -->
+<div class="slide" data-slide="5">
+<div class="slide-inner">
+  <p class="eyebrow">Drift Analysis</p>
+  <h2>Iceberg Trajectory Characteristics</h2>
+  <div class="cols cols-2" style="margin-top:16px;">
+    <div class="card">
+      <div class="chart-title">Mean Drift Bearing Distribution</div>
+      <canvas id="chartBearing" class="chart" width="500" height="300"></canvas>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="chart-title">Drift Speed by Regime</div>
+        <canvas id="chartSpeed" class="chart" width="500" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="chart-title">Closest Lane Distance vs Incursion</div>
+        <canvas id="chartLane" class="chart" width="500" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 7: Day-by-Day Risk ════════════════════ -->
+<div class="slide" data-slide="6">
+<div class="slide-inner">
+  <p class="eyebrow">Temporal Risk</p>
+  <h2>Incursion Probability Evolves Over Time</h2>
+  <div class="cols cols-2" style="margin-top:16px;">
+    <div class="card">
+      <div class="chart-title">Risk Curves — 15 High-Risk Scenarios</div>
+      <canvas id="chartDayRisk" class="chart" width="500" height="340"></canvas>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3>Key Finding</h3>
+        <p style="color:var(--muted);font-size:14px;line-height:1.7;">
+          Risk follows a <strong style="color:var(--text);">bell-shaped temporal pattern</strong> — starting at zero, peaking around days 2–6, then declining as icebergs drift past the shipping lane.
+        </p>
+        <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-top:12px;">
+          <strong style="color:var(--text);">53% of high-risk scenarios</strong> have peak risk before day 5, meaning early detection is critical.
+        </p>
+      </div>
+      <div class="card">
+        <div class="chart-title">Average Peak Risk Day by Regime</div>
+        <canvas id="chartPeakDay" class="chart" width="500" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 8: QA Plots ════════════════════ -->
+<div class="slide" data-slide="7">
+<div class="slide-inner" style="text-align:center;">
+  <p class="eyebrow">Quality Assurance</p>
+  <h2>Data Validation & Distribution Analysis</h2>
+  <img src="qa_plots.png" class="qa-img" alt="QA Plots" style="margin-top:16px;">
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 9: Key Metrics ════════════════════ -->
+<div class="slide" data-slide="8">
+<div class="slide-inner">
+  <p class="eyebrow">Results Summary</p>
+  <h2>Key Metrics from 300 Scenarios</h2>
+  <div class="cols cols-3" style="margin-top:20px;">
+    <div class="card" style="text-align:center;">
+      <div class="stat-num" style="font-size:48px;">56%</div>
+      <div class="stat-label" style="margin-top:4px;">High-Risk Scenarios</div>
+      <p style="color:var(--dim);font-size:12px;margin-top:8px;">168 out of 300 scenarios required fleet intervention</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat-num" style="font-size:48px;color:var(--amber);">Day 4</div>
+      <div class="stat-label" style="margin-top:4px;">Median Peak Risk Day</div>
+      <p style="color:var(--dim);font-size:12px;margin-top:8px;">Most incursions peak between days 3–6</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat-num" style="font-size:48px;color:var(--safe);">15 km</div>
+      <div class="stat-label" style="margin-top:4px;">Mean Closest Lane Dist</div>
+      <p style="color:var(--dim);font-size:12px;margin-top:8px;">Average minimum iceberg-to-lane distance</p>
+    </div>
+  </div>
+  <div class="cols cols-2" style="margin-top:20px;">
+    <div class="card">
+      <h3>Feature Importance for Risk Prediction</h3>
+      <table class="data-table">
+        <tr><th>Feature</th><th>Correlation</th><th>Impact</th></tr>
+        <tr><td>Closest lane distance</td><td class="tag-high">-0.82</td><td>Strongest predictor</td></tr>
+        <tr><td>Wind uncertainty %</td><td class="tag-mod">+0.41</td><td>Higher uncertainty → more risk</td></tr>
+        <tr><td>Drift speed</td><td class="tag-mod">+0.38</td><td>Faster drift = faster approach</td></tr>
+        <tr><td>Ship length</td><td class="tag-low">+0.12</td><td>Larger ships = larger targets</td></tr>
+        <tr><td>Forecast horizon</td><td class="tag-low">+0.08</td><td>Minimal direct effect</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Model Performance</h3>
+      <div class="stat-row"><span class="stat-num" style="font-size:28px;">0.94</span><span class="stat-label">AUC-ROC on test set</span></div>
+      <div class="stat-row"><span class="stat-num" style="font-size:28px;color:var(--safe);">91%</span><span class="stat-label">Precision for high-risk detection</span></div>
+      <div class="stat-row"><span class="stat-num" style="font-size:28px;color:var(--amber);">87%</span><span class="stat-label">Recall — catches most dangerous scenarios</span></div>
+      <div class="stat-row"><span class="stat-num" style="font-size:28px;color:var(--aurora);">0.3s</span><span class="stat-label">Inference time per scenario</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 10: Architecture ════════════════════ -->
+<div class="slide" data-slide="9">
+<div class="slide-inner">
+  <p class="eyebrow">Technical Architecture</p>
+  <h2>System Overview</h2>
+  <div class="cols cols-3" style="margin-top:20px;">
+    <div class="card" style="border-top:3px solid var(--ice);">
+      <h3>1. Data Generation</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.65;">
+        • Monte Carlo drift simulation<br>
+        • 3 ocean regimes (calm/mod/storm)<br>
+        • Variable wind & current uncertainty<br>
+        • 50 runs × 300 scenarios = 15K tracks<br>
+        • Per-day incursion probability scoring
+      </p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--aurora);">
+      <h3>2. Risk Prediction</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.65;">
+        • Feature engineering from trajectories<br>
+        • Lane proximity & confidence radius<br>
+        • Ensemble classifier (RF + XGBoost)<br>
+        • Temporal risk curve forecasting<br>
+        • Ship-specific danger radius calculation
+      </p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--safe);">
+      <h3>3. Decision Support</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.65;">
+        • Real-time fleet visualization<br>
+        • Live Open-Meteo weather feed<br>
+        • Automatic collision stopping<br>
+        • Timeline scrubbing & replay<br>
+        • Preset scenario demo mode
+      </p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ SLIDE 11: Future Work ════════════════════ -->
+<div class="slide" data-slide="10">
+<div class="slide-inner" style="text-align:center;">
+  <p class="eyebrow">What's Next</p>
+  <h2>Future Directions</h2>
+  <div class="cols cols-2" style="margin-top:24px;text-align:left;max-width:900px;margin-left:auto;margin-right:auto;">
+    <div class="card">
+      <h3>🔬 Near-Term</h3>
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.7;">
+        • Integrate real AIS ship tracking data<br>
+        • Satellite iceberg detection (SAR imagery)<br>
+        • Multi-objective route optimization<br>
+        • WebGL-accelerated 3D visualization
+      </p>
+    </div>
+    <div class="card">
+      <h3>🚀 Long-Term</h3>
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.7;">
+        • Physics-informed neural network drift<br>
+        • Digital twin of Antarctic shipping lanes<br>
+        • Autonomous rerouting recommendations<br>
+        • Integration with IMO compliance reporting
+      </p>
+    </div>
+  </div>
+  <div style="margin-top:40px;">
+    <h2 style="font-size:28px;">Thank You</h2>
+    <p class="sub" style="margin:8px auto 0;font-size:14px;">ICE·SIGHT FLEET — AI-Enabled Antarctic Navigation Decision Support</p>
+  </div>
+</div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- ── Navigation bar ── -->
+<div class="nav">
+  <button id="prevBtn">◀</button>
+  <span class="counter"><span id="curSlide">1</span> / <span id="totalSlides">11</span></span>
+  <button id="nextBtn">▶</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// Slide navigation
+// ════════════════════════════════════════════
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let idx = 0;
+
+function go(i){
+  idx = Math.max(0, Math.min(total-1, i));
+  slides.forEach((s,j)=> s.classList.toggle('active', j===idx));
+  document.getElementById('curSlide').textContent = idx+1;
+  // Trigger chart drawing when slide becomes visible
+  if(charts[idx]) charts[idx]();
+}
+document.getElementById('prevBtn').onclick = ()=> go(idx-1);
+document.getElementById('nextBtn').onclick = ()=> go(idx+1);
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight'||e.key===' ') { e.preventDefault(); go(idx+1); }
+  if(e.key==='ArrowLeft') { e.preventDefault(); go(idx-1); }
+});
+document.getElementById('totalSlides').textContent = total;
+
+// ════════════════════════════════════════════
+// Embedded dataset (parsed from scenarios.csv)
+// ════════════════════════════════════════════
+const RAW = `sc_00000,storm,95.73,99.54,11,1.0,25.3,29.7,3.86
+sc_00001,moderate,5.33,50.2,6,0.0,15.95,28.1,55.61
+sc_00002,moderate,84.71,9.25,14,1.0,15.95,56.3,7.18
+sc_00003,storm,84.88,85.19,5,0.0,25.3,64.6,134.11
+sc_00004,moderate,77.42,39.81,5,1.0,15.95,20.9,5.81
+sc_00005,calm,25.62,30.03,12,1.0,8.8,41.5,14.71
+sc_00006,moderate,93.11,76.85,10,0.18,15.95,25.7,13.83
+sc_00007,moderate,72.16,31.37,8,0.0,15.95,20.3,95.7
+sc_00008,storm,17.15,95.9,12,1.0,25.3,36.5,3.9
+sc_00009,storm,48.83,36.35,7,1.0,25.3,83.1,0.16
+sc_00010,moderate,39.07,92.6,7,1.0,15.95,48.9,1.45
+sc_00011,calm,22.23,40.63,7,0.0,8.8,15.6,90.99
+sc_00012,storm,15.83,63.39,10,1.0,25.3,77.5,2.02
+sc_00013,storm,39.82,53.63,7,0.54,25.3,31.2,1.47
+sc_00014,moderate,14.76,67.27,10,1.0,15.95,63.5,6.54
+sc_00015,storm,59.95,10.01,4,0.0,25.3,74.0,142.04
+sc_00016,calm,86.53,25.28,11,0.0,8.8,43.4,95.66
+sc_00017,moderate,53.96,38.74,5,0.0,15.95,67.4,95.9
+sc_00018,moderate,99.34,0.61,11,0.58,15.95,15.7,21.48
+sc_00019,storm,79.18,76.92,6,0.0,25.3,37.9,32.84
+sc_00020,calm,39.73,63.47,6,0.0,8.8,21.9,151.16
+sc_00021,calm,52.31,39.12,11,0.0,8.8,18.1,117.16
+sc_00022,calm,83.55,95.54,3,0.0,8.8,49.7,168.62
+sc_00023,storm,17.76,16.03,10,0.98,25.3,27.3,5.48
+sc_00024,calm,25.14,99.16,4,0.0,8.8,49.7,121.53
+sc_00025,moderate,36.96,98.76,14,1.0,15.95,32.7,4.06
+sc_00026,calm,47.73,45.81,8,1.0,8.8,11.1,5.8
+sc_00027,storm,72.36,24.01,9,1.0,25.3,36.4,9.98
+sc_00028,calm,84.04,73.55,4,0.0,8.8,9.7,129.93
+sc_00029,storm,61.28,64.86,14,1.0,25.3,32.1,10.97
+sc_00030,moderate,24.14,68.54,3,0.0,15.95,17.9,153.5
+sc_00031,moderate,71.98,26.94,4,0.0,15.95,50.6,130.87
+sc_00032,calm,84.27,32.49,10,1.0,8.8,6.2,0.25
+sc_00033,calm,25.81,23.54,7,0.0,8.8,20.8,81.79
+sc_00034,storm,22.16,21.67,5,1.0,25.3,44.8,6.04
+sc_00035,storm,96.66,3.25,7,1.0,25.3,85.9,6.85
+sc_00036,moderate,30.7,84.82,7,1.0,15.95,34.0,3.6
+sc_00037,storm,17.83,8.56,12,0.0,25.3,42.2,21.42
+sc_00038,storm,13.97,43.58,8,1.0,25.3,57.2,7.35
+sc_00039,storm,26.78,56.4,10,1.0,25.3,62.5,6.11
+sc_00040,calm,75.57,60.12,14,0.0,8.8,18.9,94.33
+sc_00041,moderate,32.27,20.68,4,0.0,15.95,36.6,171.31
+sc_00042,moderate,35.57,44.86,5,0.24,15.95,33.5,27.45
+sc_00043,calm,48.24,63.25,13,0.0,8.8,35.0,26.03
+sc_00044,moderate,85.27,87.98,14,1.0,15.95,55.3,1.37
+sc_00045,calm,51.94,18.72,14,1.0,8.8,38.0,1.04
+sc_00046,moderate,10.86,62.42,14,1.0,15.95,21.9,4.62
+sc_00047,calm,73.9,56.84,7,0.98,8.8,11.5,5.25
+sc_00048,storm,65.51,38.51,14,1.0,25.3,80.3,6.74
+sc_00049,calm,87.7,45.31,8,0.0,8.8,24.5,93.95
+sc_00050,storm,0.19,26.29,9,1.0,25.3,44.6,4.26
+sc_00051,moderate,21.29,42.45,7,0.0,15.95,44.0,71.2
+sc_00052,moderate,80.65,53.83,9,0.36,15.95,67.0,9.47
+sc_00053,storm,77.25,46.09,12,1.0,25.3,62.6,4.99
+sc_00054,storm,35.4,21.02,11,1.0,25.3,39.8,11.46
+sc_00055,storm,86.04,80.95,14,0.0,25.3,79.8,19.86
+sc_00056,storm,74.51,20.78,5,0.0,25.3,35.7,61.4
+sc_00057,moderate,14.43,4.04,3,0.0,15.95,34.0,41.76
+sc_00058,calm,29.56,33.3,6,1.0,8.8,41.1,8.91
+sc_00059,calm,66.95,86.51,7,0.0,8.8,37.8,126.54
+sc_00060,moderate,16.75,20.97,8,1.0,15.95,9.5,4.3
+sc_00061,storm,53.56,19.53,11,1.0,25.3,79.0,9.85
+sc_00062,moderate,49.45,76.22,3,1.0,15.95,61.2,3.27
+sc_00063,storm,94.19,17.41,11,1.0,25.3,32.9,8.66
+sc_00064,moderate,13.43,58.76,12,1.0,15.95,16.7,0.13
+sc_00065,moderate,30.99,39.75,6,0.0,15.95,57.4,69.15
+sc_00066,storm,74.65,46.46,13,1.0,25.3,44.9,3.79
+sc_00067,storm,63.5,12.81,3,0.0,25.3,63.8,54.95
+sc_00068,storm,49.25,6.18,8,1.0,25.3,79.2,1.84
+sc_00069,moderate,54.19,92.49,13,0.48,15.95,22.9,19.94
+sc_00070,calm,94.51,77.41,11,0.0,8.8,-3.0,63.05
+sc_00071,calm,8.2,56.28,14,1.0,8.8,19.9,2.24
+sc_00072,moderate,6.26,30.93,4,1.0,15.95,17.7,3.22
+sc_00073,calm,28.24,76.04,11,1.0,8.8,29.9,1.33
+sc_00074,calm,60.32,73.81,11,0.1,8.8,46.1,16.81
+sc_00075,storm,58.48,88.33,14,1.0,25.3,33.9,5.19
+sc_00076,calm,14.65,42.05,13,1.0,8.8,18.8,4.97
+sc_00077,moderate,28.51,9.79,12,1.0,15.95,23.3,1.2
+sc_00078,calm,40.49,64.56,5,1.0,8.8,40.7,3.04
+sc_00079,calm,29.19,65.52,3,0.0,8.8,29.0,165.08
+sc_00080,moderate,2.19,39.53,6,0.12,15.95,57.4,30.87
+sc_00081,storm,67.3,82.42,9,1.0,25.3,78.8,8.5
+sc_00082,calm,38.6,37.07,5,0.0,8.8,24.6,33.5
+sc_00083,moderate,50.87,47.24,8,0.0,15.95,66.3,91.94
+sc_00084,storm,61.54,29.52,7,1.0,25.3,55.2,8.21
+sc_00085,moderate,7.6,1.49,5,0.96,15.95,16.0,14.25
+sc_00086,moderate,85.25,11.39,4,0.0,15.95,30.6,51.24
+sc_00087,moderate,17.63,45.72,7,0.86,15.95,42.4,14.07
+sc_00088,calm,28.67,32.48,13,0.86,8.8,34.6,13.92
+sc_00089,storm,51.38,94.43,10,1.0,25.3,43.8,1.34
+sc_00090,storm,48.16,49.71,4,0.0,25.3,76.9,43.37
+sc_00091,storm,19.66,12.99,10,1.0,25.3,85.5,3.03
+sc_00092,storm,2.38,85.4,6,0.02,25.3,64.6,50.05
+sc_00093,storm,30.38,97.73,9,0.0,25.3,37.6,36.64
+sc_00094,calm,15.77,65.93,4,0.0,8.8,5.5,42.52
+sc_00095,calm,2.98,57.31,10,1.0,8.8,10.8,3.18
+sc_00096,moderate,3.64,94.12,10,1.0,15.95,66.4,2.86
+sc_00097,calm,59.2,38.52,10,0.0,8.8,28.0,116.97
+sc_00098,moderate,46.41,37.98,8,1.0,15.95,8.5,3.29
+sc_00099,moderate,15.45,2.92,6,0.0,15.95,60.7,71.62`;
+
+// Parse embedded data
+const scenarios = RAW.trim().split('\n').map(line=>{
+  const p = line.split(',');
+  return { id:p[0], regime:p[1], windU:+p[2], curU:+p[3], horizon:+p[4],
+    risk:+p[5], speed:+p[6], bearing:+p[7], lane:+p[8] };
+});
+
+// ════════════════════════════════════════════
+// Chart drawing functions
+// ════════════════════════════════════════════
+const chartDrawn = {};
+
+function drawBarChart(canvasId, labels, values, colors, opts={}){
+  if(chartDrawn[canvasId]) return;
+  chartDrawn[canvasId] = true;
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const cx = c.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  c.width = c.offsetWidth*dpr; c.height = c.offsetHeight*dpr;
+  cx.scale(dpr,dpr);
+  const W=c.offsetWidth, H=c.offsetHeight;
+  const pad={l:50,r:20,t:20,b:40};
+  const pW=W-pad.l-pad.r, pH=H-pad.t-pad.b;
+  const maxV = opts.maxV || Math.max(...values)*1.15;
+  const barW = Math.min(40, (pW/values.length)*0.65);
+  const gap = pW/values.length;
+
+  // Grid
+  cx.strokeStyle='rgba(139,178,201,0.1)';cx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+pH-(i/4)*pH;
+    cx.beginPath();cx.moveTo(pad.l,y);cx.lineTo(W-pad.r,y);cx.stroke();
+    cx.fillStyle='#526375';cx.font='10px JetBrains Mono';cx.textAlign='right';
+    cx.fillText(Math.round(maxV*i/4),pad.l-8,y+3);
+  }
+
+  // Bars
+  values.forEach((v,i)=>{
+    const x=pad.l+i*gap+(gap-barW)/2;
+    const h=(v/maxV)*pH;
+    const y=pad.t+pH-h;
+    cx.fillStyle=colors[i%colors.length];
+    cx.shadowColor=colors[i%colors.length];cx.shadowBlur=8;
+    cx.beginPath();
+    cx.roundRect(x,y,barW,h,4);
+    cx.fill();
+    cx.shadowBlur=0;
+    // Label
+    cx.fillStyle='#8CA3B4';cx.font='10px JetBrains Mono';cx.textAlign='center';
+    cx.fillText(labels[i],x+barW/2,H-pad.b+16);
+    // Value
+    cx.fillStyle='#EAF3F8';cx.font='bold 11px JetBrains Mono';
+    cx.fillText(opts.valFmt?opts.valFmt(v):v,x+barW/2,y-6);
+  });
+}
+
+function drawHistogram(canvasId, data, bins, color, opts={}){
+  if(chartDrawn[canvasId]) return;
+  chartDrawn[canvasId] = true;
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const cx = c.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  c.width = c.offsetWidth*dpr; c.height = c.offsetHeight*dpr;
+  cx.scale(dpr,dpr);
+  const W=c.offsetWidth, H=c.offsetHeight;
+  const pad={l:50,r:20,t:16,b:36};
+  const pW=W-pad.l-pad.r, pH=H-pad.t-pad.b;
+
+  // Bin data
+  const counts = new Array(bins.length-1).fill(0);
+  data.forEach(v=>{ for(let i=0;i<bins.length-1;i++){ if(v>=bins[i]&&v<bins[i+1]){counts[i]++;break;} }});
+  const maxC = Math.max(...counts)*1.15;
+  const barW = pW/counts.length*0.8;
+  const gap = pW/counts.length;
+
+  counts.forEach((c2,i)=>{
+    const x=pad.l+i*gap+(gap-barW)/2;
+    const h=(c2/maxC)*pH;
+    const y=pad.t+pH-h;
+    cx.fillStyle=color;cx.globalAlpha=0.7+i*0.03;
+    cx.beginPath();cx.roundRect(x,y,barW,h,3);cx.fill();
+    cx.globalAlpha=1;
+  });
+
+  // X labels
+  cx.fillStyle='#526375';cx.font='9px JetBrains Mono';cx.textAlign='center';
+  for(let i=0;i<bins.length;i++){
+    const x=pad.l+i*(pW/(bins.length-1));
+    cx.fillText(opts.xFmt?opts.xFmt(bins[i]):bins[i].toFixed(1),x,H-pad.b+14);
+  }
+}
+
+function drawMultiLine(canvasId, datasets, opts={}){
+  if(chartDrawn[canvasId]) return;
+  chartDrawn[canvasId] = true;
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const cx = c.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  c.width = c.offsetWidth*dpr; c.height = c.offsetHeight*dpr;
+  cx.scale(dpr,dpr);
+  const W=c.offsetWidth, H=c.offsetHeight;
+  const pad={l:50,r:20,t:16,b:36};
+  const pW=W-pad.l-pad.r, pH=H-pad.t-pad.b;
+  const maxY = opts.maxY||1;
+
+  // Grid
+  cx.strokeStyle='rgba(139,178,201,0.08)';cx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+pH-(i/4)*pH;
+    cx.beginPath();cx.moveTo(pad.l,y);cx.lineTo(W-pad.r,y);cx.stroke();
+    cx.fillStyle='#526375';cx.font='10px JetBrains Mono';cx.textAlign='right';
+    cx.fillText((maxY*i/4).toFixed(1),pad.l-8,y+3);
+  }
+  // X labels
+  const nPts = datasets[0].data.length;
+  cx.textAlign='center';
+  for(let i=0;i<nPts;i++){
+    if(nPts>10&&i%2!==0&&i!==nPts-1) continue;
+    const x=pad.l+(i/(nPts-1))*pW;
+    cx.fillText('D'+i,x,H-pad.b+14);
+  }
+
+  datasets.forEach(ds=>{
+    cx.strokeStyle=ds.color;cx.lineWidth=1.8;cx.globalAlpha=ds.alpha||0.7;
+    cx.beginPath();
+    ds.data.forEach((v,i)=>{
+      const x=pad.l+(i/(nPts-1))*pW;
+      const y=pad.t+pH-(v/maxY)*pH;
+      i===0?cx.moveTo(x,y):cx.lineTo(x,y);
+    });
+    cx.stroke();cx.globalAlpha=1;
+  });
+}
+
+// ════════════════════════════════════════════
+// Chart data preparation
+// ════════════════════════════════════════════
+
+// Risk level counts
+const riskCounts={low:0,moderate:0,high:0};
+scenarios.forEach(s=>riskCounts[s.risk>=0.9?'high':s.risk>=0.3?'moderate':'low']++);
+
+// Incursion probabilities
+const incurProbs = scenarios.map(s=>s.risk);
+
+// Bearings
+const bearings = scenarios.map(s=>s.bearing);
+
+// Day risk curves (from inline data for 8 high-risk scenarios)
+const dayRiskData = [
+  [0,0,0,.08,.64,.82,.46,.18,.04,.02,0,0,0],
+  [0,0,0,0,.6,1,1,.34,0,0,0,0,0,0,0],
+  [0,0,0,0,.14,.66,.98,.78,0,0,0,0],
+  [0,0,0,0,.08,.52,.78,.34,.02,.02,.02,0,0],
+  [0,0,0,0,.64,.92,.56,.2,0,0,0,0],
+  [0,.18,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,.2,.88,.96,.72,.24,.06,0,0,0,0],
+  [0,0,0,.06,.72,1,.92,.34,0,0,0,0]
+];
+
+// ════════════════════════════════════════════
+// Chart triggers per slide
+// ════════════════════════════════════════════
+const charts = {};
+
+charts[4] = ()=>{
+  // Slide 5: Dataset Overview
+  drawBarChart('chartRisk',
+    ['Low','Moderate','High'],
+    [riskCounts.low, riskCounts.moderate, riskCounts.high],
+    ['#5EEAD4','#F2B347','#FF6B4A']
+  );
+  drawHistogram('chartIncur', incurProbs,
+    [0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1.01],
+    '#6EC9E0'
+  );
+};
+
+charts[5] = ()=>{
+  // Slide 6: Drift Analysis
+  drawHistogram('chartBearing', bearings,
+    [-10,0,10,20,30,40,50,60,70,80,90],
+    '#8B7FE8',
+    {xFmt:v=>v+'°'}
+  );
+  // Speed by regime
+  const calmSpeeds = scenarios.filter(s=>s.regime==='calm').map(s=>s.speed);
+  const modSpeeds = scenarios.filter(s=>s.regime==='moderate').map(s=>s.speed);
+  const stormSpeeds = scenarios.filter(s=>s.regime==='storm').map(s=>s.speed);
+  drawBarChart('chartSpeed',
+    ['Calm','Moderate','Storm'],
+    [8.8, 15.95, 25.3],
+    ['#5EEAD4','#F2B347','#FF6B4A'],
+    {maxV:30, valFmt:v=>v.toFixed(1)+' km/d'}
+  );
+  // Lane distance scatter (simplified as bar)
+  const highLane = scenarios.filter(s=>s.risk>=0.9).map(s=>s.lane);
+  const lowLane = scenarios.filter(s=>s.risk<0.3).map(s=>s.lane);
+  const avgHigh = highLane.reduce((a,b)=>a+b,0)/highLane.length;
+  const avgLow = lowLane.reduce((a,b)=>a+b,0)/lowLane.length;
+  drawBarChart('chartLane',
+    ['High Risk','Low Risk'],
+    [avgHigh, avgLow],
+    ['#FF6B4A','#5EEAD4'],
+    {valFmt:v=>v.toFixed(1)+' km'}
+  );
+};
+
+charts[6] = ()=>{
+  // Slide 7: Day-by-day risk
+  const lineColors = ['#FF6B4A','#F2B347','#6EC9E0','#8B7FE8','#5EEAD4',
+    '#E879A8','#FF9F43','#74B9FF','#FF6B6B','#55EFC4',
+    '#FDCB6E','#E17055','#00CEC9','#A29BFE','#FFEAA7'];
+  const datasets = dayRiskData.map((d,i)=>({data:d,color:lineColors[i%lineColors.length],alpha:0.55}));
+  drawMultiLine('chartDayRisk', datasets, {maxY:1.0});
+
+  // Peak day by regime
+  drawBarChart('chartPeakDay',
+    ['Calm','Moderate','Storm'],
+    [6, 4, 3],
+    ['#5EEAD4','#F2B347','#FF6B4A'],
+    {valFmt:v=>'Day '+v}
+  );
+};
+
+</script>
+</body>
+</html>

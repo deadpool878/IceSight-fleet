@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICE·SIGHT FLEET — Multi-Iceberg Navigation Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060D16; --bg-2:#081524; --panel:#0D1B29; --panel-2:#122336;
+    --border:rgba(139,178,201,0.14); --border-strong:rgba(139,178,201,0.28);
+    --ice:#6EC9E0; --ice-dim:rgba(110,201,224,0.35);
+    --aurora:#8B7FE8; --danger:#FF6B4A; --danger-dim:rgba(255,107,74,0.18);
+    --safe:#5EEAD4; --amber:#F2B347;
+    --text:#EAF3F8; --text-muted:#8CA3B4; --text-dim:#526375;
+    --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(ellipse 1200px 700px at 20% -10%, #0C2036 0%, var(--bg) 55%);
+    color:var(--text); font-family:var(--body); -webkit-font-smoothing:antialiased;
+    padding:32px 32px 56px;
+  }
+  .wrap{max-width:1240px;margin:0 auto;}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:28px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:22px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ice);margin:0 0 8px;}
+  h1{font-family:var(--disp);font-weight:700;font-size:28px;margin:0 0 8px;letter-spacing:-0.01em;}
+  h1 span{color:var(--ice);}
+  .sub{color:var(--text-muted);font-size:14px;max-width:600px;line-height:1.55;margin:0;}
+  .badge{font-family:var(--mono);font-size:11px;color:var(--text-muted);border:1px solid var(--border-strong);border-radius:100px;padding:7px 14px;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+  .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--safe);box-shadow:0 0 6px var(--safe);}
+
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;}
+  @media (max-width:960px){.layout{grid-template-columns:1fr;}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;}
+  .panel-title{font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:0.03em;text-transform:uppercase;color:var(--text-muted);margin:0 0 16px;display:flex;align-items:center;justify-content:space-between;}
+
+  #stage{width:100%;height:auto;display:block;border-radius:10px;background:linear-gradient(180deg,#050B14 0%, #061224 60%, #071427 100%);}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:var(--text-muted);font-family:var(--mono);}
+  .legend div{display:flex;align-items:center;gap:6px;}
+  .legend i{width:14px;height:2px;display:inline-block;border-radius:2px;}
+
+  .progress-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .day-label{font-family:var(--mono);font-size:11.5px;color:var(--text-muted);white-space:nowrap;min-width:56px;}
+  #timeline{flex:1;height:6px;border-radius:4px;background:linear-gradient(90deg, var(--ice) 0%, var(--ice) var(--fill,0%), var(--panel-2) var(--fill,0%));outline:none;cursor:pointer;}
+  #timeline::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ice);border:3px solid #04121D;box-shadow:0 0 0 2px var(--ice-dim);cursor:grab;}
+  #timeline::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.15);}
+  #timeline::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ice);border:3px solid #04121D;cursor:grab;}
+
+  .controls{display:flex;flex-direction:column;gap:16px;}
+  .field label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-muted);margin-bottom:8px;}
+  .field label b{color:var(--text);font-weight:600;font-family:var(--mono);font-size:12px;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:4px;background:linear-gradient(90deg, var(--ice) 0%, var(--ice) var(--fill,50%), var(--panel-2) var(--fill,50%));outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ice);border:3px solid #04121D;box-shadow:0 0 0 2px var(--ice-dim);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--ice);border:3px solid #04121D;cursor:pointer;}
+  select{width:100%;background:var(--panel-2);border:1px solid var(--border-strong);color:var(--text);padding:10px 12px;border-radius:8px;font-family:var(--body);font-size:13px;cursor:pointer;}
+  input[type=number]{background:var(--panel-2);border:1px solid var(--border-strong);color:var(--text);padding:8px 10px;border-radius:8px;font-family:var(--mono);font-size:12px;width:100%;outline:none;}
+  input[type=number]:focus{border-color:var(--ice);}
+  .coord-row{display:flex;gap:8px;}
+  .coord-row .field{flex:1;}
+  .coord-row .field label{font-size:11.5px;}
+
+  .btnrow{display:flex;gap:8px;}
+  button.act{flex:1;padding:12px 10px;border-radius:9px;border:none;cursor:pointer;font-family:var(--disp);font-weight:700;font-size:12.5px;letter-spacing:0.02em;text-transform:uppercase;transition:filter .15s, transform .1s;}
+  button.act:active{transform:scale(0.97);}
+  button.primary{background:var(--ice);color:#03101B;}
+  button.secondary{background:var(--panel-2);color:var(--text);border:1px solid var(--border-strong);}
+  button.act:hover{filter:brightness(1.1);}
+  button.act:disabled{opacity:0.4;cursor:not-allowed;}
+  button.step{flex:none;padding:10px 16px;font-size:12px;letter-spacing:0;}
+
+  .side{display:flex;flex-direction:column;gap:16px;}
+  .status-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+  .status-row:last-child{border-bottom:none;}
+  .status-name{color:var(--text);font-weight:600;}
+  .status-detail{font-family:var(--mono);font-size:11.5px;color:var(--text-muted);text-align:right;}
+  .status-detail.hi{color:var(--danger);}
+  .status-detail.ok{color:var(--safe);}
+  .status-detail.stopped{color:var(--danger);font-weight:600;}
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;}
+
+  .alertlog{max-height:210px;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:6px;}
+  .alertlog::-webkit-scrollbar{width:6px;}
+  .alertlog::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+  .alert-item{font-family:var(--mono);font-size:11px;color:var(--danger);background:var(--danger-dim);border:1px solid rgba(255,107,74,0.3);border-radius:6px;padding:7px 9px;line-height:1.4;}
+  .alert-item.collision{background:rgba(255,107,74,0.3);border-color:rgba(255,107,74,0.55);font-weight:600;}
+  .alert-empty{font-family:var(--mono);font-size:11.5px;color:var(--text-dim);padding:6px 0;}
+
+  .chartpanel canvas{width:100%;height:130px;display:block;}
+  .footnote{font-size:11.5px;color:var(--text-dim);line-height:1.6;margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border);}
+
+  .ship-size-group{padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .ship-size-group:last-child{border-bottom:none;padding-bottom:0;}
+  .ship-size-header{font-family:var(--mono);font-size:11.5px;color:var(--text);font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:6px;}
+  .ship-size-header .route-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  .weather-info{background:var(--panel-2);border-radius:8px;padding:10px 12px;display:none;}
+  .weather-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;}
+  .weather-row span:first-child{color:var(--text-muted);}
+  .weather-row b{color:var(--text);font-family:var(--mono);font-size:11.5px;}
+  .weather-err{font-family:var(--mono);font-size:11px;color:var(--danger);padding:4px 0;}
+  .weather-status{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:100px;display:inline-flex;align-items:center;gap:5px;}
+  .weather-status .w-dot{width:5px;height:5px;border-radius:50%;}
+  .weather-status.live{color:#5EEAD4;background:rgba(94,234,212,0.12);}
+  .weather-status.live .w-dot{background:#5EEAD4;box-shadow:0 0 5px #5EEAD4;}
+  .weather-status.offline{color:#F2B347;background:rgba(242,179,71,0.12);}
+  .weather-status.offline .w-dot{background:#F2B347;box-shadow:0 0 5px #F2B347;}
+  .chk-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-muted);cursor:pointer;}
+  .chk-row input{accent-color:var(--ice);width:15px;height:15px;cursor:pointer;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="eyebrow" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;"><a href="index.html" style="color:var(--text-muted);text-decoration:none;font-size:11px;">← Home</a> <a href="dashboard.html" style="color:var(--text-muted);text-decoration:none;font-size:11px;">Dashboard →</a></p>
+      <p class="eyebrow">AI-Enabled Antarctic Navigation Decision Support · Fleet Edition</p>
+      <h1>ICE<span>·</span>SIGHT <span style="color:var(--text);">FLEET</span></h1>
+      <p class="sub">Multiple icebergs, multiple ships — each on its own unique route — with live weather integration and automatic collision stopping.</p>
+    </div>
+    <div class="badge"><span class="dot"></span> Simulation engine ready</div>
+  </header>
+
+  <div class="layout">
+
+    <div>
+      <div class="panel">
+        <p class="panel-title">Live traffic field <span id="run-tag" style="font-family:var(--mono);font-weight:400;text-transform:none;color:var(--text-dim);font-size:11px;"></span></p>
+        <canvas id="stage" width="1000" height="600"></canvas>
+        <div class="progress-row">
+          <span class="day-label" id="dayLabel">Day 0</span>
+          <input type="range" id="timeline" min="0" max="1000" value="0" step="1">
+          <span class="day-label" id="dayEnd" style="color:var(--text-dim);text-align:right;">/ —</span>
+        </div>
+        <div class="legend">
+          <div><i style="background:var(--amber);"></i> Iceberg (drifting)</div>
+          <div><i style="background:var(--ice);opacity:0.5;"></i> Alternate plausible drift</div>
+          <div><i style="background:var(--safe);"></i> Ship (on route)</div>
+          <div><i style="background:var(--danger);"></i> Proximity risk / stopped</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <p class="panel-title">Closest ship↔iceberg approach over time</p>
+        <div class="chartpanel"><canvas id="chart" width="1000" height="130"></canvas></div>
+        <p class="footnote"><b>Model note —</b> each iceberg's bold path is one simulated realization of its drift; the faint lines around it are alternate plausible drifts under the same forecast uncertainty, shown for context. Each ship follows its own distinct route. Ships automatically stop when they enter an iceberg's danger zone. Use the timeline scrubber to fast-forward or rewind the simulation. Real weather data from Open-Meteo can be applied to drift parameters. This is a simplified demonstration model, not fed by live satellite or AIS data.</p>
+      </div>
+    </div>
+
+    <div class="side">
+
+      <div class="panel">
+        <p class="panel-title">Scenario controls</p>
+        <div class="controls">
+          <div class="field">
+            <label>Quick preset</label>
+            <select id="presetSelect">
+              <option value="">— custom —</option>
+              <option value="calm-passage">🟢 Calm Passage</option>
+              <option value="close-call">🟡 Close Call</option>
+              <option value="multi-collision">🔴 Multi-Collision</option>
+              <option value="storm-chaos">⛈ Storm Chaos</option>
+              <option value="real-icebergs">🧊 Real icebergs (A23a, B15, C19)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Number of icebergs <b id="icebergCount-val">5</b></label>
+            <input type="range" id="icebergCount" min="1" max="8" value="5" step="1">
+          </div>
+          <div class="field">
+            <label>Number of ships <b id="shipCount-val">3</b></label>
+            <input type="range" id="shipCount" min="1" max="5" value="3" step="1">
+          </div>
+          <div class="field">
+            <label>Ocean & wind regime</label>
+            <select id="scenario">
+              <option value="calm">Calm — steady katabatic drift</option>
+              <option value="moderate" selected>Moderate — variable gyre current</option>
+              <option value="storm">Storm — high wind/current variance</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Wind forecast uncertainty <b id="windU-val">45%</b></label>
+            <input type="range" id="windU" min="0" max="100" value="45" step="1">
+          </div>
+          <div class="field">
+            <label>Current forecast uncertainty <b id="curU-val">35%</b></label>
+            <input type="range" id="curU" min="0" max="100" value="35" step="1">
+          </div>
+          <div class="field">
+            <label>Forecast horizon <b id="horizon-val">10 days</b></label>
+            <input type="range" id="horizon" min="5" max="14" value="10" step="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Live weather <span id="weatherStatus" class="weather-status offline"><span class="w-dot"></span>Estimated (offline)</span></p>
+        <div class="controls">
+          <div class="coord-row">
+            <div class="field">
+              <label>Latitude</label>
+              <input type="number" id="wLat" value="-62.5" step="0.1" min="-90" max="90">
+            </div>
+            <div class="field">
+              <label>Longitude</label>
+              <input type="number" id="wLon" value="-58.0" step="0.1" min="-180" max="180">
+            </div>
+          </div>
+          <div class="btnrow">
+            <button class="act secondary" id="fetchWeatherBtn">Fetch Weather</button>
+          </div>
+          <div class="weather-info" id="weatherInfo"></div>
+          <label class="chk-row"><input type="checkbox" id="useRealWeather"> Apply real weather to drift model</label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Ship sizes</p>
+        <div class="controls" id="perShipSizes"></div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Fleet & playback</p>
+        <div class="controls">
+          <div class="field">
+            <label>Playback speed</label>
+            <select id="playSpeed">
+              <option value="1600">Slow</option>
+              <option value="900" selected>Normal</option>
+              <option value="450">Fast</option>
+            </select>
+          </div>
+          <div class="btnrow">
+            <button class="act primary" id="runBtn">Run simulation</button>
+          </div>
+          <div class="btnrow">
+            <button class="act secondary" id="pauseBtn" disabled>Pause</button>
+            <button class="act secondary" id="resetBtn" disabled>Reset</button>
+          </div>
+          <div class="btnrow">
+            <button class="act secondary step" id="stepBackBtn" disabled>◀ Day</button>
+            <button class="act secondary step" id="stepFwdBtn" disabled>Day ▶</button>
+          </div>
+          <div class="btnrow">
+            <button class="act secondary" id="screenshotBtn">📸 Screenshot</button>
+            <button class="act secondary" id="demoBtn">▶ Demo Mode</button>
+          </div>
+          <div class="btnrow">
+            <button class="act secondary" id="exportAdvisoryBtn">📋 Export Advisory</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Fleet status <span id="mlStatus" style="font-family:var(--mono);font-weight:400;text-transform:none;font-size:10px;color:var(--text-dim);">ML loading…</span></p>
+        <div id="fleetStatus"><p class="alert-empty">Run the simulation to see live ship status.</p></div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Proximity alert log</p>
+        <div class="alertlog" id="alertLog"><p class="alert-empty">No alerts yet.</p></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+const W = 1000, H = 600;
+const chartCanvas = document.getElementById('chart');
+const cctx = chartCanvas.getContext('2d');
+const CW = 1000, CH = 130;
+const timeline = document.getElementById('timeline');
+
+const KM_PER_UNIT = 0.55;
+const M_PER_UNIT = KM_PER_UNIT*1000;
+const DANGER_BASE_HALFWIDTH = 40;
+
+const REGIMES = {
+  calm:     {speed:14, bearingDeg:22, angleStd:5,  speedStd:0.05},
+  moderate: {speed:24, bearingDeg:38, angleStd:7,  speedStd:0.08},
+  storm:    {speed:38, bearingDeg:56, angleStd:10, speedStd:0.11}
+};
+
+const ROUTE_TEMPLATES = [
+  { start:{x:950,y:50},  end:{x:200,y:560},                          color:'#5EEAD4', name:'Diagonal ↘' },
+  { start:{x:30,y:160},  end:{x:970,y:180},                          color:'#6EC9E0', name:'Transit →' },
+  { start:{x:450,y:40},  mid:{x:620,y:310}, end:{x:920,y:540},      color:'#8B7FE8', name:'Curved arc' },
+  { start:{x:80,y:520},  end:{x:880,y:70},                           color:'#F2B347', name:'Reverse ↗' },
+  { start:{x:20,y:400},  mid:{x:500,y:120}, end:{x:980,y:380},      color:'#E879A8', name:'S-curve' }
+];
+
+const DEFAULT_SHIP_SIZES = [
+  {length:180, beam:28},
+  {length:140, beam:22},
+  {length:250, beam:35},
+  {length:100, beam:18},
+  {length:320, beam:45}
+];
+
+let scenario = null;
+let playing = false;
+let currentDay = 0;
+let lastTs = null;
+let weatherData = null;
+let scrubbing = false;
+let realIcebergMode = false;
+let mlModel = null;
+let mlReady = false;
+
+// ── ML Risk Model (TensorFlow.js) ──
+// Trained on synthetic dataset patterns: distance, regime, wind, ship size → collision probability
+async function initMLModel(){
+  try {
+    if(typeof tf === 'undefined') { console.log('TF.js not loaded, ML fallback active'); return; }
+    mlModel = tf.sequential();
+    mlModel.add(tf.layers.dense({inputShape:[6], units:16, activation:'relu'}));
+    mlModel.add(tf.layers.dense({units:8, activation:'relu'}));
+    mlModel.add(tf.layers.dense({units:1, activation:'sigmoid'}));
+    mlModel.compile({optimizer:'adam', loss:'binaryCrossentropy', metrics:['accuracy']});
+
+    // Generate training data from known patterns in the dataset
+    const xData = [], yData = [];
+    for(let i = 0; i < 600; i++){
+      const dist = Math.random() * 200;       // km to nearest iceberg
+      const regime = Math.floor(Math.random()*3); // 0=calm,1=moderate,2=storm
+      const windU = Math.random();             // normalized uncertainty
+      const curU = Math.random();
+      const shipSize = Math.random();          // normalized ship size
+      const dayNorm = Math.random();           // day / horizon
+      const riskScore = 1 / (1 + Math.exp(0.04*(dist - 30) + 2*(regime-1) + 1.5*windU + curU - 0.5));
+      xData.push([dist/200, regime/2, windU, curU, shipSize, dayNorm]);
+      yData.push(riskScore > 0.5 ? 1 : 0);
+    }
+    const xs = tf.tensor2d(xData);
+    const ys = tf.tensor2d(yData, [yData.length, 1]);
+    await mlModel.fit(xs, ys, {epochs:15, batchSize:32, verbose:0});
+    xs.dispose(); ys.dispose();
+    mlReady = true;
+    const mlStatusEl = document.getElementById('mlStatus');
+    if(mlStatusEl) mlStatusEl.innerHTML = '<span style="color:var(--safe);">● ML Ready</span>';
+    console.log('ML model trained and ready');
+  } catch(e) {
+    console.log('ML model init failed:', e.message);
+  }
+}
+
+function predictRisk(distKm, regime, windU, curU, shipSizeM, dayNorm){
+  if(!mlReady || !mlModel) return null;
+  try {
+    const input = tf.tensor2d([[distKm/200, regime/2, windU/100, curU/100, shipSizeM/400, dayNorm]]);
+    const pred = mlModel.predict(input);
+    const score = pred.dataSync()[0];
+    input.dispose(); pred.dispose();
+    return Math.round(score * 100);
+  } catch(e) { return null; }
+}
+
+// Real Antarctic iceberg data — positions are illustrative approximations,
+// not live-tracked. Sizes based on publicly reported USNIC dimensions.
+// A23a: one of the largest icebergs, ~4000 km², broke from Ronne Ice Shelf
+// B15: massive tabular iceberg, ~11000 km² at peak, from Ross Ice Shelf  
+// C19: large iceberg from Ross Ice Shelf, ~100 km long
+const REAL_ICEBERGS = [
+  { name:'A23a', startX:220, startY:340, bearing:35, speed:8,  note:'~4000 km², Ronne Ice Shelf' },
+  { name:'B15',  startX:680, startY:260, bearing:15, speed:6,  note:'~11000 km², Ross Ice Shelf' },
+  { name:'C19',  startX:440, startY:440, bearing:55, speed:10, note:'~100 km long, Ross Ice Shelf' }
+];
+
+// ── Utilities ──
+
+function gaussian(){
+  let u=0,v=0;
+  while(u===0)u=Math.random();
+  while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function lerp(a,b,t){ return {x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t}; }
+function distUnits(p,q){ return Math.hypot(p.x-q.x, p.y-q.y); }
+function syncFill(el){
+  const min=+el.min, max=+el.max, val=+el.value;
+  el.style.setProperty('--fill', ((val-min)/(max-min)*100)+'%');
+}
+
+// Effective day for a ship: stops at collisionDay if one exists
+function shipDay(s, dayFloat){
+  return Math.min(dayFloat, s.collisionDay);
+}
+
+// ── Route interpolation ──
+
+function interpolateRoute(template, horizon) {
+  const pts = [];
+  for(let d = 0; d <= horizon; d++){
+    const t = d / horizon;
+    if(template.mid){
+      pts.push({
+        x: (1-t)*(1-t)*template.start.x + 2*(1-t)*t*template.mid.x + t*t*template.end.x,
+        y: (1-t)*(1-t)*template.start.y + 2*(1-t)*t*template.mid.y + t*t*template.end.y
+      });
+    } else {
+      pts.push(lerp(template.start, template.end, t));
+    }
+  }
+  return pts;
+}
+
+function routeTangent(ship, dayFloat) {
+  const h = scenario.horizon;
+  const d0 = Math.min(h, Math.floor(dayFloat));
+  const d1 = Math.min(h, d0 + 1);
+  if(d0 === d1 && d0 > 0)
+    return Math.atan2(ship.days[d0].y - ship.days[d0-1].y, ship.days[d0].x - ship.days[d0-1].x);
+  if(d0 === d1)
+    return Math.atan2(ship.days[1].y - ship.days[0].y, ship.days[1].x - ship.days[0].x);
+  return Math.atan2(ship.days[d1].y - ship.days[d0].y, ship.days[d1].x - ship.days[d0].x);
+}
+
+function posAt(days, dayFloat, horizon){
+  const d0 = Math.min(horizon, Math.floor(dayFloat));
+  const d1 = Math.min(horizon, d0+1);
+  const frac = dayFloat - d0;
+  return lerp(days[d0], days[d1], frac);
+}
+
+// ── Per-ship size controls ──
+
+function updatePerShipControls(){
+  const shipCount = +document.getElementById('shipCount').value;
+  const container = document.getElementById('perShipSizes');
+  let html = '';
+  for(let i = 0; i < shipCount; i++){
+    const def = DEFAULT_SHIP_SIZES[i] || DEFAULT_SHIP_SIZES[0];
+    const tmpl = ROUTE_TEMPLATES[i % ROUTE_TEMPLATES.length];
+    html += `<div class="ship-size-group">
+      <p class="ship-size-header"><span class="route-dot" style="background:${tmpl.color};"></span>Ship ${i+1} · ${tmpl.name}</p>
+      <div class="field">
+        <label>Length <b id="ship${i}Len-val">${def.length} m</b></label>
+        <input type="range" id="ship${i}Len" min="50" max="400" value="${def.length}" step="5">
+      </div>
+      <div class="field">
+        <label>Beam <b id="ship${i}Beam-val">${def.beam} m</b></label>
+        <input type="range" id="ship${i}Beam" min="10" max="70" value="${def.beam}" step="1">
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+  for(let i = 0; i < shipCount; i++){
+    const lenEl  = document.getElementById('ship'+i+'Len');
+    const beamEl = document.getElementById('ship'+i+'Beam');
+    const lenOut  = document.getElementById('ship'+i+'Len-val');
+    const beamOut = document.getElementById('ship'+i+'Beam-val');
+    if(lenEl){  syncFill(lenEl);  lenEl.addEventListener('input', ()=>{ syncFill(lenEl);  lenOut.textContent  = lenEl.value+' m'; }); }
+    if(beamEl){ syncFill(beamEl); beamEl.addEventListener('input', ()=>{ syncFill(beamEl); beamOut.textContent = beamEl.value+' m'; }); }
+  }
+}
+
+// ── Weather API (Open-Meteo — free, no key) ──
+
+async function fetchWeather(){
+  const btn = document.getElementById('fetchWeatherBtn');
+  const info = document.getElementById('weatherInfo');
+  const statusEl = document.getElementById('weatherStatus');
+  const lat = document.getElementById('wLat').value;
+  const lon = document.getElementById('wLon').value;
+  btn.textContent = 'Fetching…';
+  btn.disabled = true;
+  info.style.display = 'block';
+  info.innerHTML = '<p class="weather-err" style="color:var(--text-muted);">Requesting…</p>';
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kmh&timezone=auto`;
+    const resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const c = data.current;
+    weatherData = {
+      temperature: c.temperature_2m,
+      windSpeed:   c.wind_speed_10m,
+      windDir:     c.wind_direction_10m,
+      windGusts:   c.wind_gusts_10m,
+      time:        c.time,
+      live: true
+    };
+    const dirLabel = windDirLabel(weatherData.windDir);
+    info.innerHTML = `
+      <div class="weather-row"><span>Temperature</span><b>${weatherData.temperature}°C</b></div>
+      <div class="weather-row"><span>Wind</span><b>${weatherData.windSpeed} km/h ${dirLabel}</b></div>
+      <div class="weather-row"><span>Gusts</span><b>${weatherData.windGusts} km/h</b></div>
+      <div class="weather-row"><span>Updated</span><b style="font-size:10px;">${weatherData.time}</b></div>
+    `;
+    statusEl.className = 'weather-status live';
+    statusEl.innerHTML = '<span class="w-dot"></span>Live weather';
+  } catch(e) {
+    // Offline fallback: use synthetic weather from current regime
+    const regimeKey = document.getElementById('scenario').value;
+    const sc = REGIMES[regimeKey];
+    weatherData = {
+      temperature: -2 + Math.round(Math.random()*6),
+      windSpeed:   Math.round(sc.speed * 1.2 + Math.random()*10),
+      windDir:     Math.round(sc.bearingDeg + (Math.random()-0.5)*30),
+      windGusts:   Math.round(sc.speed * 1.5 + Math.random()*15),
+      time:        new Date().toISOString().slice(0,16).replace('T',' '),
+      live: false
+    };
+    const dirLabel = windDirLabel(weatherData.windDir);
+    info.innerHTML = `
+      <div class="weather-row"><span>Temperature</span><b>${weatherData.temperature}°C</b></div>
+      <div class="weather-row"><span>Wind (est.)</span><b>${weatherData.windSpeed} km/h ${dirLabel}</b></div>
+      <div class="weather-row"><span>Gusts (est.)</span><b>${weatherData.windGusts} km/h</b></div>
+      <div class="weather-row"><span>Source</span><b style="font-size:10px;">Synthetic fallback · ${weatherData.time}</b></div>
+    `;
+    statusEl.className = 'weather-status offline';
+    statusEl.innerHTML = '<span class="w-dot"></span>Estimated (offline)';
+  }
+  btn.textContent = 'Fetch Weather';
+  btn.disabled = false;
+}
+
+function windDirLabel(deg){
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(deg/22.5)%16];
+}
+
+function applyWeatherToRegime(sc){
+  if(!weatherData || !document.getElementById('useRealWeather').checked) return sc;
+  const windBearing = (weatherData.windDir + 180) % 360;
+  sc = Object.assign({}, sc);
+  sc.bearingDeg = sc.bearingDeg * 0.4 + windBearing * 0.6;
+  const windFactor = Math.max(0.3, Math.min(2.5, weatherData.windSpeed / 25));
+  sc.speed = sc.speed * windFactor;
+  const gustExtra = Math.max(0, (weatherData.windGusts - weatherData.windSpeed) * 0.08);
+  sc.angleStd += gustExtra;
+  sc.speedStd += gustExtra * 0.003;
+  return sc;
+}
+
+// ── Iceberg simulation ──
+
+function simulateIcebergPath(start, sc, angleStd, speedStd, horizon){
+  const bias = gaussian()*angleStd*0.6;
+  const bearing = sc.bearingDeg + (Math.random()-0.5)*150 + gaussian()*12;
+  let pos = {x:start.x, y:start.y};
+  const days = [pos];
+  for(let d=1; d<=horizon; d++){
+    const ang = (bearing + bias + gaussian()*angleStd) * Math.PI/180;
+    const spd = Math.max(1.5, sc.speed * (1 + gaussian()*speedStd));
+    pos = {x: pos.x + Math.cos(ang)*spd, y: pos.y + Math.sin(ang)*spd};
+    days.push(pos);
+  }
+  return days;
+}
+
+// ── Scenario generation ──
+
+function generateScenario(){
+  const icebergCount = +document.getElementById('icebergCount').value;
+  const shipCount    = +document.getElementById('shipCount').value;
+  const regimeKey    = document.getElementById('scenario').value;
+  let sc = Object.assign({}, REGIMES[regimeKey]);
+  const windU = +document.getElementById('windU').value;
+  const curU  = +document.getElementById('curU').value;
+  const horizon = +document.getElementById('horizon').value;
+
+  sc = applyWeatherToRegime(sc);
+
+  const angleStd = sc.angleStd + 0.11*((windU+curU)/2);
+  const speedStd = sc.speedStd + 0.0018*curU;
+
+  const icebergs = [];
+  for(let i = 0; i < icebergCount; i++){
+    let start, label, localSc;
+    if(realIcebergMode && i < REAL_ICEBERGS.length){
+      const real = REAL_ICEBERGS[i];
+      start = {x: real.startX, y: real.startY};
+      label = real.name;
+      localSc = Object.assign({}, sc, { bearingDeg: real.bearing, speed: real.speed });
+    } else {
+      start = {x: 60 + Math.random()*860, y: 200 + Math.random()*340};
+      label = `Iceberg ${i+1}`;
+      localSc = sc;
+    }
+    const days = simulateIcebergPath(start, localSc, angleStd, speedStd, horizon);
+    const ensemble = [];
+    for(let e = 0; e < 7; e++) ensemble.push(simulateIcebergPath(start, localSc, angleStd, speedStd, horizon));
+    icebergs.push({ id:i, label, days, ensemble });
+  }
+
+  const ships = [];
+  for(let i = 0; i < shipCount; i++){
+    const template = ROUTE_TEMPLATES[i % ROUTE_TEMPLATES.length];
+    const days = interpolateRoute(template, horizon);
+    const lenEl  = document.getElementById('ship'+i+'Len');
+    const beamEl = document.getElementById('ship'+i+'Beam');
+    const shipLenM  = lenEl  ? +lenEl.value  : (DEFAULT_SHIP_SIZES[i]||DEFAULT_SHIP_SIZES[0]).length;
+    const shipBeamM = beamEl ? +beamEl.value : (DEFAULT_SHIP_SIZES[i]||DEFAULT_SHIP_SIZES[0]).beam;
+    const beamUnits   = shipBeamM / M_PER_UNIT;
+    const dangerUnits = DANGER_BASE_HALFWIDTH + beamUnits/2;
+    ships.push({ id:i, label:`Ship ${i+1}`, route:template, days, shipLenM, shipBeamM, dangerUnits });
+  }
+
+  // Pre-compute collision day for each ship (first day it enters any iceberg's danger zone)
+  for(const s of ships){
+    s.collisionDay = Infinity;
+    s.collisionPos = null;
+    for(let d = 0; d <= horizon; d++){
+      for(const b of icebergs){
+        if(distUnits(s.days[d], b.days[d]) < s.dangerUnits){
+          s.collisionDay = d;
+          s.collisionPos = {x:s.days[d].x, y:s.days[d].y};
+          break;
+        }
+      }
+      if(s.collisionDay !== Infinity) break;
+    }
+  }
+
+  // Pre-compute collision alert list
+  const collisionAlertList = [];
+  for(const s of ships){
+    if(s.collisionDay !== Infinity){
+      for(const b of icebergs){
+        if(distUnits(s.days[s.collisionDay], b.days[s.collisionDay]) < s.dangerUnits){
+          collisionAlertList.push({ day:s.collisionDay, ship:s.label, iceberg:b.label });
+          break;
+        }
+      }
+    }
+  }
+  collisionAlertList.sort((a,b) => a.day - b.day);
+
+  // Proximity alerts (non-collision close passes)
+  const minDistByDay = [];
+  const alerts = [];
+  let globalMinDanger = Infinity;
+  for(const s of ships) if(s.dangerUnits < globalMinDanger) globalMinDanger = s.dangerUnits;
+
+  for(let d = 0; d <= horizon; d++){
+    let minD = Infinity;
+    for(const s of ships){
+      for(const b of icebergs){
+        const du = distUnits(s.days[d], b.days[d]);
+        const dk = du * KM_PER_UNIT;
+        if(dk < minD) minD = dk;
+        if(du < s.dangerUnits) alerts.push({ day:d, ship:s.label, iceberg:b.label, distKm:dk });
+      }
+    }
+    minDistByDay.push(minD);
+  }
+  alerts.sort((a,b) => a.day - b.day);
+
+  return { icebergs, ships, horizon, globalMinDanger, minDistByDay, alerts, collisionAlertList, regimeKey };
+}
+
+// ── Risk / status ──
+
+function riskTier(km, dangerKm){
+  if(km < dangerKm)       return {label:'HIGH',     cls:'hi', color:'#FF6B4A'};
+  if(km < dangerKm * 2)   return {label:'MODERATE', cls:'',   color:'#F2B347'};
+  return                         {label:'LOW',      cls:'ok', color:'#5EEAD4'};
+}
+
+function updateFleetStatus(dayFloat){
+  const el = document.getElementById('fleetStatus');
+  if(!scenario) return;
+  const regimeMap = {calm:0, moderate:1, storm:2};
+  const wU = +(document.getElementById('windU').value)||35;
+  const cU = +(document.getElementById('curU').value)||35;
+  const regimeIdx = regimeMap[scenario.regimeKey]||1;
+  let html = '';
+  for(const s of scenario.ships){
+    const sd = shipDay(s, dayFloat);
+    const sp = posAt(s.days, sd, scenario.horizon);
+    let nearest = Infinity, nearestLabel = '';
+    for(const b of scenario.icebergs){
+      const bp = posAt(b.days, dayFloat, scenario.horizon);
+      const dk = distUnits(sp,bp)*KM_PER_UNIT;
+      if(dk < nearest){ nearest = dk; nearestLabel = b.label; }
+    }
+    const mlScore = predictRisk(nearest, regimeIdx, wU, cU, s.shipLenM, dayFloat/scenario.horizon);
+    const mlBadge = mlScore !== null ? `<span style="margin-left:6px;font-size:10px;padding:1px 5px;border-radius:4px;background:${mlScore>70?'rgba(255,107,74,0.25)':mlScore>40?'rgba(242,179,71,0.25)':'rgba(94,234,212,0.25)'};color:${mlScore>70?'#FF6B4A':mlScore>40?'#F2B347':'#5EEAD4'};">ML ${mlScore}%</span>` : '';
+    if(dayFloat >= s.collisionDay){
+      html += `<div class="status-row">
+        <span class="status-name"><span class="status-dot" style="background:#FF6B4A;"></span>${s.label}</span>
+        <span class="status-detail stopped">STOPPED · ${nearestLabel}${mlBadge}</span>
+      </div>`;
+    } else {
+      const tier = riskTier(nearest, s.dangerUnits * KM_PER_UNIT);
+      html += `<div class="status-row">
+        <span class="status-name"><span class="status-dot" style="background:${tier.color};"></span>${s.label}</span>
+        <span class="status-detail ${tier.cls}">${nearest.toFixed(1)} km · ${nearestLabel} · ${tier.label}${mlBadge}</span>
+      </div>`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+// Rebuild alert log from scratch based on current day (works with scrubbing)
+function updateAlertLog(dayFloat){
+  if(!scenario) return;
+  const log = document.getElementById('alertLog');
+  const upTo = Math.floor(dayFloat);
+  let html = '';
+
+  // Proximity alerts
+  for(const a of scenario.alerts){
+    if(a.day <= upTo){
+      html += `<div class="alert-item">Day ${a.day} — ${a.ship} within ${a.distKm.toFixed(1)} km of ${a.iceberg}</div>`;
+    }
+  }
+  // Collision alerts
+  for(const a of scenario.collisionAlertList){
+    if(a.day <= upTo){
+      html += `<div class="alert-item collision">⚠ Day ${a.day} — ${a.ship} STOPPED — collision course with ${a.iceberg}</div>`;
+    }
+  }
+
+  if(!html) html = '<p class="alert-empty">No alerts yet.</p>';
+  log.innerHTML = html;
+}
+
+// ── Drawing ──
+
+function drawCoast(){
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, 470);
+  ctx.bezierCurveTo(60,455, 90,480, 140,460);
+  ctx.bezierCurveTo(190,440, 210,475, 260,470);
+  ctx.bezierCurveTo(300,466, 320,500, 300,540);
+  ctx.bezierCurveTo(270,570, 180,560, 100,585);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0,440,0,H);
+  grad.addColorStop(0,'#DCEEF5');
+  grad.addColorStop(1,'#9FC4D6');
+  ctx.fillStyle = grad;
+  ctx.globalAlpha = 0.92;
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(60,100,130,0.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(30,500); ctx.quadraticCurveTo(70,520,50,560);
+  ctx.moveTo(120,480); ctx.quadraticCurveTo(150,510,130,545);
+  ctx.moveTo(210,470); ctx.quadraticCurveTo(230,495,215,520);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawAurora(t){
+  ctx.save();
+  for(let i=0;i<3;i++){
+    const phase = t*0.00015 + i*2.1;
+    const yBase = 40 + i*18;
+    ctx.beginPath();
+    ctx.moveTo(0, yBase);
+    for(let x=0; x<=W; x+=40){
+      const y = yBase + Math.sin(x*0.006 + phase)*14 + Math.sin(x*0.002+phase*1.3)*8;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(W,0); ctx.lineTo(0,0); ctx.closePath();
+    ctx.fillStyle = i===1 ? 'rgba(139,127,232,0.05)' : 'rgba(110,201,224,0.045)';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawLanes(){
+  if(!scenario) return;
+  ctx.save();
+  ctx.setLineDash([8,7]);
+  ctx.lineWidth = 1.25;
+  for(const s of scenario.ships){
+    ctx.strokeStyle = s.route.color + '38';
+    ctx.beginPath();
+    ctx.moveTo(s.days[0].x, s.days[0].y);
+    for(let k = 1; k < s.days.length; k++) ctx.lineTo(s.days[k].x, s.days[k].y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawIcebergs(dayFloat){
+  if(!scenario) return;
+  const horizon = scenario.horizon;
+  for(const b of scenario.icebergs){
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(110,201,224,0.22)';
+    for(const e of b.ensemble){
+      ctx.beginPath();
+      ctx.moveTo(e[0].x, e[0].y);
+      for(let k=1;k<e.length;k++) ctx.lineTo(e[k].x, e[k].y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    const d0 = Math.min(horizon, Math.floor(dayFloat));
+    ctx.save();
+    ctx.strokeStyle = 'rgba(242,179,71,0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(b.days[0].x, b.days[0].y);
+    for(let k=1;k<=d0;k++) ctx.lineTo(b.days[k].x, b.days[k].y);
+    const cur = posAt(b.days, dayFloat, horizon);
+    ctx.lineTo(cur.x, cur.y);
+    ctx.stroke();
+    ctx.restore();
+
+    let danger = false;
+    for(const s of scenario.ships){
+      const sp = posAt(s.days, shipDay(s, dayFloat), horizon);
+      if(distUnits(sp,cur) < s.dangerUnits) danger = true;
+    }
+    const col = danger ? '#FF6B4A' : '#F2B347';
+
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = danger ? 16 : 8;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(cur.x, cur.y-9);
+    ctx.lineTo(cur.x+8, cur.y+2);
+    ctx.lineTo(cur.x+3, cur.y+8);
+    ctx.lineTo(cur.x-6, cur.y+5);
+    ctx.lineTo(cur.x-8, cur.y-1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = danger ? 'rgba(255,107,74,0.9)' : 'rgba(242,179,71,0.85)';
+    ctx.fillText(b.label, cur.x+11, cur.y-8);
+    ctx.restore();
+  }
+}
+
+function drawShips(dayFloat){
+  if(!scenario) return;
+  const horizon = scenario.horizon;
+  const now = performance.now();
+  for(const s of scenario.ships){
+    const sd = shipDay(s, dayFloat);
+    const cur = posAt(s.days, sd, horizon);
+    const ang = routeTangent(s, sd);
+    const cosA = Math.cos(ang), sinA = Math.sin(ang);
+    const rot = (lx,ly) => ({x: cur.x + lx*cosA - ly*sinA, y: cur.y + lx*sinA + ly*cosA});
+
+    const dispLen  = Math.max(18, Math.min(46, 8 + s.shipLenM/10));
+    const ratio    = Math.min(0.5, s.shipBeamM / s.shipLenM);
+    const dispBeam = Math.max(dispLen*0.18, dispLen*ratio);
+    const half = dispLen/2, hb = dispBeam/2;
+    const hull = [rot(half,0), rot(half*0.55,hb), rot(-half,hb), rot(-half,-hb), rot(half*0.55,-hb)];
+
+    let danger = false;
+    for(const b of scenario.icebergs){
+      const bp = posAt(b.days, dayFloat, horizon);
+      if(distUnits(cur,bp) < s.dangerUnits) danger = true;
+    }
+
+    const stopped = dayFloat >= s.collisionDay;
+    const col = stopped ? '#FF6B4A' : (danger ? '#FF6B4A' : s.route.color);
+
+    // Trail
+    ctx.save();
+    ctx.strokeStyle = s.route.color + '66';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(s.days[0].x, s.days[0].y);
+    const d0 = Math.min(horizon, Math.floor(sd));
+    for(let k=1;k<=d0;k++) ctx.lineTo(s.days[k].x, s.days[k].y);
+    ctx.lineTo(cur.x, cur.y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Hull
+    ctx.save();
+    if(stopped){
+      const pulse = 0.6 + 0.4 * Math.sin(now * 0.006);
+      ctx.shadowColor = '#FF6B4A';
+      ctx.shadowBlur = 10 + pulse * 16;
+      ctx.globalAlpha = 0.7 + pulse * 0.3;
+    } else {
+      ctx.shadowColor = col;
+      ctx.shadowBlur = danger ? 14 : 7;
+    }
+    ctx.fillStyle = col;
+    ctx.strokeStyle = '#04121D';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(hull[0].x, hull[0].y);
+    for(let i=1;i<hull.length;i++) ctx.lineTo(hull[i].x, hull[i].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // Label
+    ctx.save();
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillStyle = danger || stopped ? 'rgba(255,107,74,0.9)' : (s.route.color + 'E6');
+    ctx.fillText(s.label, cur.x+dispLen*0.7, cur.y-dispLen*0.6);
+    if(stopped){
+      ctx.font = 'bold 10px JetBrains Mono';
+      ctx.fillStyle = 'rgba(255,107,74,1)';
+      ctx.fillText('⛔ STOPPED', cur.x+dispLen*0.7, cur.y-dispLen*0.6+13);
+    }
+    ctx.restore();
+
+    // Blast / explosion effect at collision point
+    if(stopped) drawBlastEffect(s, now);
+  }
+}
+
+// ── Blast / explosion effect ──
+function drawBlastEffect(ship, now){
+  if(!ship.collisionPos) return;
+  const pos = ship.collisionPos;
+  const cycleMs = 1400;
+  const t = (now % cycleMs) / cycleMs; // 0..1
+
+  // Shockwave ring
+  const ringRadius = 8 + t * 42;
+  const ringAlpha = (1 - t) * 0.45;
+  ctx.save();
+  ctx.strokeStyle = `rgba(255,107,74,${ringAlpha})`;
+  ctx.lineWidth = 2.5 * (1 - t);
+  ctx.beginPath();
+  ctx.arc(pos.x, pos.y, ringRadius, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+
+  // Second ring (delayed)
+  const t2 = (t + 0.35) % 1;
+  const ring2Radius = 6 + t2 * 36;
+  const ring2Alpha = (1 - t2) * 0.3;
+  ctx.save();
+  ctx.strokeStyle = `rgba(242,179,71,${ring2Alpha})`;
+  ctx.lineWidth = 1.5 * (1 - t2);
+  ctx.beginPath();
+  ctx.arc(pos.x, pos.y, ring2Radius, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+
+  // Spark particles radiating outward
+  const numSparks = 20;
+  for(let i = 0; i < numSparks; i++){
+    const angle = (Math.PI*2*i/numSparks) + Math.sin(now*0.003+i)*0.35;
+    const speed = 18 + (i%4)*10;
+    const dist = speed * t;
+    const x = pos.x + Math.cos(angle)*dist;
+    const y = pos.y + Math.sin(angle)*dist;
+    const alpha = (1 - t) * (0.5 + 0.5*Math.sin(i*1.7));
+    const sz = (1.5 + (i%3)*1.2) * (1 - t*0.7);
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, alpha);
+    ctx.fillStyle = i%4===0 ? '#FFEAA7' : i%4===1 ? '#FF9F43' : i%4===2 ? '#FF6B4A' : '#FFCF48';
+    ctx.shadowColor = '#FF6B4A';
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0.3, sz), 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Central flash / fireball
+  const flashPulse = 0.45 + 0.35*Math.sin(now*0.012);
+  ctx.save();
+  ctx.globalAlpha = flashPulse * (0.55 + 0.45*(1-t));
+  const grad = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,14);
+  grad.addColorStop(0, '#FFF8E1');
+  grad.addColorStop(0.4, '#FF9F43');
+  grad.addColorStop(1, 'rgba(255,107,74,0)');
+  ctx.fillStyle = grad;
+  ctx.shadowColor = '#FF6B4A';
+  ctx.shadowBlur = 28;
+  ctx.beginPath();
+  ctx.arc(pos.x, pos.y, 10 + 4*Math.sin(now*0.009), 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // Smoke wisps rising upward
+  const numSmoke = 6;
+  for(let i = 0; i < numSmoke; i++){
+    const st = (t + i*0.17) % 1;
+    const sx = pos.x + Math.sin(now*0.0018+i*2.5)*10;
+    const sy = pos.y - st*35 - i*4;
+    const sAlpha = (1-st)*0.22;
+    const sSize = 3 + st*10;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, sAlpha);
+    ctx.fillStyle = '#2E2620';
+    ctx.beginPath();
+    ctx.arc(sx, sy, sSize, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function render(dayFloat){
+  ctx.clearRect(0,0,W,H);
+  drawAurora(performance.now());
+  drawCoast();
+  drawLanes();
+  drawIcebergs(dayFloat);
+  drawShips(dayFloat);
+}
+
+function drawChart(){
+  cctx.clearRect(0,0,CW,CH);
+  if(!scenario) return;
+  const pad = {l:44, r:12, t:12, b:20};
+  const plotW = CW-pad.l-pad.r, plotH = CH-pad.t-pad.b;
+  const data = scenario.minDistByDay;
+  const n = data.length;
+  const maxD = Math.max(20, ...data.filter(v=>isFinite(v)));
+
+  cctx.save();
+  cctx.strokeStyle = 'rgba(139,178,201,0.14)';
+  cctx.font = '10px JetBrains Mono';
+  cctx.fillStyle = '#8CA3B4';
+  for(let g=0; g<=3; g++){
+    const y = pad.t + plotH - (g/3)*plotH;
+    cctx.beginPath(); cctx.moveTo(pad.l,y); cctx.lineTo(CW-pad.r,y); cctx.stroke();
+    cctx.textAlign='right';
+    cctx.fillText(Math.round(maxD*g/3)+'km', pad.l-6, y+3);
+  }
+  cctx.restore();
+
+  const pts = data.map((v,i)=>({x: pad.l+(i/(n-1))*plotW, y: pad.t+plotH-(Math.min(v,maxD)/maxD)*plotH}));
+  const dangerKm = scenario.globalMinDanger*KM_PER_UNIT;
+  const dangerY = pad.t+plotH-(Math.min(dangerKm,maxD)/maxD)*plotH;
+  cctx.save();
+  cctx.setLineDash([5,4]);
+  cctx.strokeStyle = 'rgba(255,107,74,0.6)';
+  cctx.beginPath(); cctx.moveTo(pad.l,dangerY); cctx.lineTo(CW-pad.r,dangerY); cctx.stroke();
+  cctx.restore();
+
+  cctx.save();
+  cctx.strokeStyle = '#6EC9E0';
+  cctx.lineWidth = 2;
+  cctx.beginPath();
+  pts.forEach((p,i)=> i===0?cctx.moveTo(p.x,p.y):cctx.lineTo(p.x,p.y));
+  cctx.stroke();
+  cctx.restore();
+
+  cctx.save();
+  cctx.font = '10px JetBrains Mono';
+  cctx.fillStyle='#526375';
+  cctx.textAlign='center';
+  for(let i=0;i<n;i++){
+    if(n>10 && i%2!==0 && i!==n-1) continue;
+    cctx.fillText('D'+i, pts[i].x, CH-4);
+  }
+  cctx.restore();
+}
+
+function drawChartIndicator(dayFloat){
+  if(!scenario) return;
+  const pad = {l:44, r:12};
+  const plotW = CW-pad.l-pad.r;
+  const x = pad.l + (dayFloat/scenario.horizon)*plotW;
+  cctx.save();
+  cctx.strokeStyle = 'rgba(234,243,248,0.6)';
+  cctx.lineWidth = 1.5;
+  cctx.beginPath();
+  cctx.moveTo(x, 8); cctx.lineTo(x, CH-16);
+  cctx.stroke();
+  cctx.restore();
+}
+
+// ── Main loop ──
+
+function frame(ts){
+  if(lastTs===null) lastTs = ts;
+  const dt = ts - lastTs;
+  lastTs = ts;
+
+  if(playing && scenario){
+    const msPerDay = +document.getElementById('playSpeed').value;
+    currentDay += dt / msPerDay;
+    if(currentDay >= scenario.horizon){
+      currentDay = scenario.horizon;
+      playing = false;
+      document.getElementById('pauseBtn').textContent = 'Pause';
+    }
+  }
+
+  render(currentDay);
+  if(scenario){
+    // Update timeline scrubber (unless user is dragging it)
+    if(!scrubbing){
+      timeline.value = Math.round((currentDay / scenario.horizon) * 1000);
+      syncFill(timeline);
+    }
+    drawChart();
+    drawChartIndicator(currentDay);
+    updateFleetStatus(currentDay);
+    updateAlertLog(currentDay);
+    document.getElementById('dayLabel').textContent = `Day ${Math.floor(currentDay)}`;
+    document.getElementById('dayEnd').textContent = `/ ${scenario.horizon}`;
+  } else {
+    document.getElementById('dayLabel').textContent = 'Day 0';
+  }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ── Controls ──
+
+function runSimulation(){
+  scenario = generateScenario();
+  currentDay = 0;
+  playing = true;
+  document.getElementById('alertLog').innerHTML = '<p class="alert-empty">No alerts yet.</p>';
+  document.getElementById('pauseBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('stepBackBtn').disabled = false;
+  document.getElementById('stepFwdBtn').disabled = false;
+  document.getElementById('pauseBtn').textContent = 'Pause';
+  document.getElementById('dayEnd').textContent = `/ ${scenario.horizon}`;
+  document.getElementById('run-tag').textContent = `${scenario.icebergs.length} icebergs · ${scenario.ships.length} ships · ${scenario.horizon}-day horizon`;
+  timeline.value = 0;
+  syncFill(timeline);
+}
+
+function togglePause(){
+  if(!scenario) return;
+  if(currentDay >= scenario.horizon){
+    currentDay = 0;
+    document.getElementById('alertLog').innerHTML = '<p class="alert-empty">No alerts yet.</p>';
+  }
+  playing = !playing;
+  document.getElementById('pauseBtn').textContent = playing ? 'Pause' : 'Resume';
+}
+
+function resetPlayback(){
+  if(!scenario) return;
+  currentDay = 0;
+  playing = true;
+  document.getElementById('alertLog').innerHTML = '<p class="alert-empty">No alerts yet.</p>';
+  document.getElementById('pauseBtn').textContent = 'Pause';
+}
+
+function stepForward(){
+  if(!scenario) return;
+  playing = false;
+  document.getElementById('pauseBtn').textContent = 'Resume';
+  currentDay = Math.min(scenario.horizon, Math.floor(currentDay) + 1);
+}
+
+function stepBackward(){
+  if(!scenario) return;
+  playing = false;
+  document.getElementById('pauseBtn').textContent = 'Resume';
+  currentDay = Math.max(0, Math.ceil(currentDay) - 1);
+}
+
+// ── Preset scenarios for demo / presentation ──
+const PRESETS = {
+  'calm-passage':    { icebergs:3, ships:3, regime:'calm',     windU:20, curU:15, horizon:10, speed:'900' },
+  'close-call':       { icebergs:4, ships:2, regime:'moderate', windU:50, curU:40, horizon:8,  speed:'900' },
+  'multi-collision':  { icebergs:6, ships:4, regime:'storm',    windU:70, curU:60, horizon:10, speed:'900' },
+  'storm-chaos':      { icebergs:8, ships:5, regime:'storm',    windU:90, curU:80, horizon:12, speed:'450' },
+  'real-icebergs':    { icebergs:5, ships:3, regime:'moderate', windU:35, curU:30, horizon:10, speed:'900', real:true }
+};
+
+function applyPreset(key){
+  const p = PRESETS[key];
+  if(!p) return;
+  realIcebergMode = !!p.real;
+  document.getElementById('icebergCount').value = p.icebergs;
+  document.getElementById('shipCount').value = p.ships;
+  document.getElementById('scenario').value = p.regime;
+  document.getElementById('windU').value = p.windU;
+  document.getElementById('curU').value = p.curU;
+  document.getElementById('horizon').value = p.horizon;
+  document.getElementById('playSpeed').value = p.speed;
+  // Update labels + fills
+  ['icebergCount','shipCount','windU','curU','horizon'].forEach(id => {
+    const el = document.getElementById(id);
+    const out = document.getElementById(id+'-val');
+    syncFill(el);
+    const fmt = v => id==='windU'||id==='curU' ? v+'%' : id==='horizon' ? v+' days' : v;
+    out.textContent = fmt(el.value);
+  });
+  updatePerShipControls();
+  runSimulation();
+}
+
+// ── Screenshot ──
+function saveScreenshot(){
+  // Composite the stage + chart onto one canvas
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H + CH + 20;
+  const cx = c.getContext('2d');
+  cx.drawImage(canvas, 0, 0);
+  cx.fillStyle = '#0D1B29';
+  cx.fillRect(0, H, W, 20);
+  cx.drawImage(chartCanvas, 0, H+20);
+  const link = document.createElement('a');
+  link.download = `ice-sight-${Date.now()}.png`;
+  link.href = c.toDataURL('image/png');
+  link.click();
+}
+
+// ── Demo mode ──
+let demoMode = false;
+let demoTimer = null;
+let demoIndex = 0;
+const DEMO_ORDER = ['calm-passage','close-call','multi-collision','storm-chaos'];
+
+function startDemo(){
+  demoMode = true;
+  demoIndex = 0;
+  document.getElementById('demoBtn').textContent = '⏹ Stop Demo';
+  document.getElementById('demoBtn').classList.remove('secondary');
+  document.getElementById('demoBtn').classList.add('primary');
+  runDemoStep();
+}
+
+function runDemoStep(){
+  if(!demoMode || demoIndex >= DEMO_ORDER.length){
+    stopDemo();
+    return;
+  }
+  const key = DEMO_ORDER[demoIndex];
+  document.getElementById('presetSelect').value = key;
+  applyPreset(key);
+  demoIndex++;
+  // Wait for simulation to finish, then move to next
+  demoTimer = setTimeout(()=>{
+    if(demoMode) runDemoStep();
+  }, 12000); // 12s per scenario
+}
+
+function stopDemo(){
+  demoMode = false;
+  if(demoTimer) clearTimeout(demoTimer);
+  demoTimer = null;
+  document.getElementById('demoBtn').textContent = '▶ Demo Mode';
+  document.getElementById('demoBtn').classList.remove('primary');
+  document.getElementById('demoBtn').classList.add('secondary');
+  document.getElementById('presetSelect').value = '';
+}
+
+// ── Export Advisory ──
+function exportAdvisory(){
+  if(!scenario) return;
+  const day = currentDay;
+  const dFloor = Math.min(scenario.horizon, Math.floor(day));
+
+  let shipRows = '';
+  for(const s of scenario.ships){
+    const sd = shipDay(s, day);
+    const sp = posAt(s.days, sd, scenario.horizon);
+    let nearest = Infinity, nearestLabel = '';
+    for(const b of scenario.icebergs){
+      const bp = posAt(b.days, day, scenario.horizon);
+      const dk = distUnits(sp, bp) * KM_PER_UNIT;
+      if(dk < nearest){ nearest = dk; nearestLabel = b.label; }
+    }
+    let tier = riskTier(nearest, s.dangerUnits * KM_PER_UNIT);
+    let action = 'Proceed';
+    if(tier.label === 'MODERATE') action = 'Monitor closely';
+    if(tier.label === 'HIGH') action = 'Reroute immediately';
+    if(day >= s.collisionDay){ action = '⛔ STOPPED — collision'; tier = {label:'COLLISION', color:'#FF6B4A'}; }
+    shipRows += `<tr><td>${s.label}</td><td>${s.shipLenM}m x ${s.shipBeamM}m</td><td>${nearest.toFixed(1)} km</td><td>${nearestLabel}</td><td style="color:${tier.color};font-weight:700;">${tier.label}</td><td style="font-weight:600;">${action}</td></tr>`;
+  }
+
+  const wSrc = weatherData ? (weatherData.live ? 'Live (Open-Meteo)' : 'Estimated (offline)') : 'Not fetched';
+  const wInfo = weatherData ? `${weatherData.windSpeed} km/h ${windDirLabel(weatherData.windDir)}, ${weatherData.temperature}C` : 'N/A';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ICE SIGHT Advisory</title>
+<style>
+  body{font-family:Inter,Helvetica,sans-serif;margin:40px;color:#1a1a2e;background:#fff;}
+  h1{font-size:20px;margin:0 0 4px;} h2{font-size:14px;color:#555;margin:24px 0 8px;font-weight:600;}
+  .meta{font-size:12px;color:#666;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:8px 10px;border-bottom:2px solid #ddd;font-size:11px;text-transform:uppercase;color:#666;}
+  td{padding:8px 10px;border-bottom:1px solid #eee;}
+  .footer{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#999;}
+</style></head><body>
+<h1>ICE SIGHT FLEET — Navigation Advisory</h1>
+<div class="meta">Day ${Math.floor(day)} of ${scenario.horizon} | ${scenario.icebergs.length} icebergs tracked | Weather: ${wSrc}</div>
+<div class="meta">Wind: ${wInfo} | Regime: ${scenario.regimeKey}</div>
+<h2>Ship Risk Assessment</h2>
+<table><thead><tr><th>Ship</th><th>Dimensions</th><th>Nearest Berg</th><th>Closest Name</th><th>Risk</th><th>Recommendation</th></tr></thead>
+<tbody>${shipRows}</tbody></table>
+<div class="footer">Generated by ICE SIGHT FLEET Simulator | ${new Date().toLocaleString()} | This is a simplified decision-support output, not a substitute for official maritime advisories.</div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=800,height=600');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 600);
+}
+
+// ── Wire up UI ──
+
+['icebergCount','shipCount','windU','curU','horizon'].forEach(id=>{
+  const el = document.getElementById(id);
+  const out = document.getElementById(id+'-val');
+  const fmt = v => {
+    if(id==='windU'||id==='curU') return v+'%';
+    if(id==='horizon') return v+' days';
+    return v;
+  };
+  syncFill(el);
+  out.textContent = fmt(el.value);
+  el.addEventListener('input', ()=>{
+    syncFill(el);
+    out.textContent = fmt(el.value);
+    if(id === 'shipCount') updatePerShipControls();
+  });
+});
+
+// Timeline scrubber
+timeline.addEventListener('input', ()=>{
+  if(!scenario) return;
+  scrubbing = true;
+  playing = false;
+  document.getElementById('pauseBtn').textContent = 'Resume';
+  currentDay = (+timeline.value / 1000) * scenario.horizon;
+  syncFill(timeline);
+});
+timeline.addEventListener('pointerup', ()=>{ scrubbing = false; });
+timeline.addEventListener('touchend', ()=>{ scrubbing = false; });
+timeline.addEventListener('mouseup', ()=>{ scrubbing = false; });
+
+updatePerShipControls();
+
+document.getElementById('runBtn').addEventListener('click', runSimulation);
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+document.getElementById('resetBtn').addEventListener('click', resetPlayback);
+document.getElementById('stepBackBtn').addEventListener('click', stepBackward);
+document.getElementById('stepFwdBtn').addEventListener('click', stepForward);
+document.getElementById('fetchWeatherBtn').addEventListener('click', fetchWeather);
+document.getElementById('screenshotBtn').addEventListener('click', saveScreenshot);
+document.getElementById('exportAdvisoryBtn').addEventListener('click', exportAdvisory);
+document.getElementById('presetSelect').addEventListener('change', function(){
+  if(this.value) applyPreset(this.value);
+  else realIcebergMode = false;
+});
+document.getElementById('demoBtn').addEventListener('click', function(){
+  if(demoMode) stopDemo(); else startDemo();
+});
+
+// Enable screenshot button once scenario is running
+document.getElementById('screenshotBtn').disabled = false;
+
+runSimulation();
+initMLModel();
+</script>
+</body>
+</html>
