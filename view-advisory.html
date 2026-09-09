@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICE·SIGHT — View Advisory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060D16; --panel:#0D1B29; --panel-2:#122336;
+  --border:rgba(139,178,201,0.14); --border-strong:rgba(139,178,201,0.28);
+  --ice:#6EC9E0; --danger:#FF6B4A; --safe:#5EEAD4; --amber:#F2B347;
+  --text:#EAF3F8; --text-muted:#8CA3B4; --text-dim:#526375;
+  --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);padding:32px;}
+.wrap{max-width:800px;margin:0 auto;}
+.header{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.header h1{font-family:var(--disp);font-weight:700;font-size:20px;}
+.header h1 span{color:var(--ice);}
+.back{color:var(--text-muted);text-decoration:none;font-size:13px;}
+.back:hover{color:var(--ice);}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;}
+.card h2{font-family:var(--disp);font-weight:600;font-size:16px;margin:0 0 16px;color:var(--ice);}
+.meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+.meta-item{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:140px;}
+.meta-item .label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);}
+.meta-item .value{font-family:var(--disp);font-weight:700;font-size:18px;color:var(--text);margin-top:4px;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;padding:10px;border-bottom:2px solid var(--border-strong);font-size:11px;text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);}
+td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;}
+.risk-high{color:var(--danger);font-weight:700;}
+.risk-moderate{color:var(--amber);font-weight:700;}
+.risk-low{color:var(--safe);font-weight:700;}
+.risk-collision{color:var(--danger);font-weight:700;text-transform:uppercase;}
+.action{font-weight:600;font-size:12px;}
+.footer{margin-top:24px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-dim);text-align:center;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-family:var(--disp);font-weight:700;font-size:13px;text-decoration:none;transition:all .2s;border:none;cursor:pointer;}
+.btn-primary{background:var(--ice);color:#03101B;}
+.btn-secondary{background:var(--panel-2);color:var(--text);border:1px solid var(--border-strong);}
+.loading{text-align:center;padding:60px;color:var(--text-muted);font-size:14px;}
+.error{text-align:center;padding:60px;color:var(--danger);font-size:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <a href="simulator.html" class="back">← Back to Simulator</a>
+    <h1>ICE<span>·</span>SIGHT Advisory</h1>
+  </div>
+  <div id="content"><div class="loading">Loading advisory…</div></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDNyXWniH-IqeMLsLbJtjX5zV0YIAeN_zA",
+  authDomain: "icesight-fleet.firebaseapp.com",
+  projectId: "icesight-fleet",
+  storageBucket: "icesight-fleet.firebasestorage.app",
+  messagingSenderId: "133909887299",
+  appId: "1:133909887299:web:3f7c4ff6e2cc9d91a797f6"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+async function loadAdvisory() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const content = document.getElementById('content');
+  
+  if (!id) {
+    content.innerHTML = '<div class="error">No advisory ID provided.</div>';
+    return;
+  }
+  
+  try {
+    const doc = await db.collection('advisories').doc(id).get();
+    if (!doc.exists) {
+      content.innerHTML = '<div class="error">Advisory not found.</div>';
+      return;
+    }
+    
+    const d = doc.data();
+    const date = d.createdAt ? d.createdAt.toDate().toLocaleString() : 'Unknown date';
+    
+    let shipRows = '';
+    if (d.shipDetails) {
+      d.shipDetails.forEach(s => {
+        const riskClass = 'risk-' + s.risk.toLowerCase();
+        shipRows += `<tr>
+          <td>${s.name}</td>
+          <td>${s.dimensions}</td>
+          <td>${s.nearestBerg}</td>
+          <td>${s.distance}</td>
+          <td class="${riskClass}">${s.risk}</td>
+          <td class="action">${s.action}</td>
+        </tr>`;
+      });
+    }
+    
+    content.innerHTML = `
+      <div class="card">
+        <h2>Simulation Overview</h2>
+        <div class="meta">
+          <div class="meta-item"><div class="label">Day</div><div class="value">${d.currentDay || '?'} / ${d.horizon || '?'}</div></div>
+          <div class="meta-item"><div class="label">Ships</div><div class="value">${d.shipCount || '?'}</div></div>
+          <div class="meta-item"><div class="label">Icebergs</div><div class="value">${d.icebergCount || '?'}</div></div>
+          <div class="meta-item"><div class="label">Regime</div><div class="value" style="text-transform:capitalize;">${d.regime || '?'}</div></div>
+        </div>
+        ${d.weather ? `<p style="font-size:12px;color:var(--text-dim);">Weather: ${d.weather.source} — ${d.weather.temp}°C, ${d.weather.wind} km/h wind</p>` : ''}
+      </div>
+      
+      <div class="card">
+        <h2>Ship Risk Assessment</h2>
+        <table>
+          <thead><tr><th>Ship</th><th>Dimensions</th><th>Nearest Berg</th><th>Distance</th><th>Risk</th><th>Action</th></tr></thead>
+          <tbody>${shipRows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No ship data available</td></tr>'}</tbody>
+        </table>
+      </div>
+      
+      <div class="card">
+        <h2>Risk Summary</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${(d.riskSummary || []).map(r => {
+            const cls = r.toLowerCase() === 'high' ? 'risk-high' : r.toLowerCase() === 'moderate' ? 'risk-moderate' : 'risk-low';
+            return `<span class="${cls}" style="background:var(--panel-2);padding:6px 16px;border-radius:100px;font-size:12px;">${r}</span>`;
+          }).join('')}
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button class="btn btn-primary" onclick="printAdvisory()">🖨️ Print / PDF</button>
+        <a href="simulator.html" class="btn btn-secondary">← New Simulation</a>
+      </div>
+      
+      <div class="footer">
+        Saved by ${d.userName || 'Unknown'} on ${date}<br>
+        Generated by ICE·SIGHT FLEET — This is a simplified decision-support output, not a substitute for official maritime advisories.
+      </div>
+    `;
+  } catch (e) {
+    content.innerHTML = `<div class="error">Error loading advisory: ${e.message}</div>`;
+  }
+}
+
+function printAdvisory() {
+  window.print();
+}
+
+loadAdvisory();
+</script>
+</body>
+</html>
