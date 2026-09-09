@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ICE·SIGHT FLEET — Multi-Iceberg Navigation Simulator</title>
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -151,7 +152,7 @@
   .advisory-delete{background:none;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:4px;}
   .advisory-delete:hover{color:var(--danger);}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js" async defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -167,6 +168,7 @@
       <p class="sub">Multiple icebergs, multiple ships — each on its own unique route — with live weather integration and automatic collision stopping.</p>
     </div>
     <div class="auth-nav">
+      <span id="offlineBadge" style="display:none;font-family:var(--mono);font-size:9px;color:#F2B347;background:rgba(242,179,71,0.12);padding:3px 8px;border-radius:100px;margin-right:8px;">OFFLINE</span>
       <span id="authDebug" style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-right:8px;">loading...</span>
       <button class="auth-nav-btn" id="authBtn">Sign In</button>
     </div>
@@ -968,21 +970,18 @@ function drawCoast(){
   ctx.restore();
 }
 
+var auroraPhase=0;
 function drawAurora(t){
+  auroraPhase=t*0.0001;
   ctx.save();
-  for(let i=0;i<3;i++){
-    const phase = t*0.00015 + i*2.1;
-    const yBase = 40 + i*18;
-    ctx.beginPath();
-    ctx.moveTo(0, yBase);
-    for(let x=0; x<=W; x+=40){
-      const y = yBase + Math.sin(x*0.006 + phase)*14 + Math.sin(x*0.002+phase*1.3)*8;
-      ctx.lineTo(x,y);
-    }
-    ctx.lineTo(W,0); ctx.lineTo(0,0); ctx.closePath();
-    ctx.fillStyle = i===1 ? 'rgba(139,127,232,0.05)' : 'rgba(110,201,224,0.045)';
-    ctx.fill();
-  }
+  ctx.fillStyle='rgba(110,201,224,0.04)';
+  ctx.beginPath();ctx.moveTo(0,50);
+  for(var x=0;x<=W;x+=80){ctx.lineTo(x,40+Math.sin(x*0.005+auroraPhase)*20);}
+  ctx.lineTo(W,0);ctx.lineTo(0,0);ctx.fill();
+  ctx.fillStyle='rgba(139,127,232,0.03)';
+  ctx.beginPath();ctx.moveTo(0,70);
+  for(var x=0;x<=W;x+=80){ctx.lineTo(x,60+Math.sin(x*0.004+auroraPhase*1.3)*15);}
+  ctx.lineTo(W,0);ctx.lineTo(0,0);ctx.fill();
   ctx.restore();
 }
 
@@ -1293,13 +1292,15 @@ function drawChartIndicator(dayFloat){
 
 // ── Main loop ──
 
+var frameCount=0;
 function frame(ts){
   if(lastTs===null) lastTs = ts;
-  const dt = ts - lastTs;
+  var dt = ts - lastTs;
   lastTs = ts;
+  frameCount++;
 
   if(playing && scenario){
-    const msPerDay = +document.getElementById('playSpeed').value;
+    var msPerDay = +document.getElementById('playSpeed').value;
     currentDay += dt / msPerDay;
     if(currentDay >= scenario.horizon){
       currentDay = scenario.horizon;
@@ -1310,17 +1311,15 @@ function frame(ts){
 
   render(currentDay);
   if(scenario){
-    // Update timeline scrubber (unless user is dragging it)
     if(!scrubbing){
       timeline.value = Math.round((currentDay / scenario.horizon) * 1000);
       syncFill(timeline);
     }
-    drawChart();
-    drawChartIndicator(currentDay);
-    updateFleetStatus(currentDay);
-    updateAlertLog(currentDay);
-    document.getElementById('dayLabel').textContent = `Day ${Math.floor(currentDay)}`;
-    document.getElementById('dayEnd').textContent = `/ ${scenario.horizon}`;
+    // Throttle expensive updates
+    if(frameCount%8===0){ drawChart(); drawChartIndicator(currentDay); }
+    if(frameCount%5===0){ updateFleetStatus(currentDay); updateAlertLog(currentDay); }
+    document.getElementById('dayLabel').textContent = 'Day ' + Math.floor(currentDay);
+    document.getElementById('dayEnd').textContent = '/ ' + scenario.horizon;
   } else {
     document.getElementById('dayLabel').textContent = 'Day 0';
   }
@@ -1642,6 +1641,14 @@ setTimeout(function(){
     console.log('[Sim] Auth button wired up (fallback)');
   }
 },1000);
+</script>
+
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(function(r){console.log('SW registered:',r.scope);}).catch(function(e){console.log('SW failed:',e);});}
+function updateOnlineStatus(){var b=document.getElementById('offlineBadge');if(b)b.style.display=navigator.onLine?'none':'inline';}
+window.addEventListener('online',updateOnlineStatus);
+window.addEventListener('offline',updateOnlineStatus);
+updateOnlineStatus();
 </script>
 </body>
 </html>
