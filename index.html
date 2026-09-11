@@ -261,29 +261,27 @@ footer a{color:var(--ice);text-decoration:none;}
   <p>ICE·SIGHT FLEET — Built for <a href="https://codecovenants.dev" target="_blank">Code Covenants</a> · AI-Enabled Antarctic Navigation Decision Support</p>
 </footer>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const FIREBASE_CONFIG={apiKey:"AIzaSyDNyXWniH-IqeMLsLbJtjX5zV0YIAeN_zA",authDomain:"icesight-fleet.firebaseapp.com",projectId:"icesight-fleet",storageBucket:"icesight-fleet.firebasestorage.app",messagingSenderId:"133909887299",appId:"1:133909887299:web:3f7c4ff6e2cc9d91a797f6"};
+const SUPABASE_URL='https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_ANON_KEY='YOUR_ANON_KEY';
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let currentUser=null;
 
-console.log('[Auth] Script starting...');
-console.log('[Auth] Firebase SDK loaded?',typeof firebase);
-try{
-  firebase.initializeApp(FIREBASE_CONFIG);
-  console.log('[Auth] App initialized OK');
-  firebase.auth().onAuthStateChanged(function(user){
-    currentUser=user;
-    console.log('[Auth] State changed:',user?user.email:'signed out');
-    var btn=document.getElementById('authBtn');
-    if(btn){
-      if(user){btn.textContent=user.displayName||user.email;btn.onclick=function(){firebase.auth().signOut();};}
-      else{btn.textContent='Sign In';btn.onclick=showAuthModal;}
-    }
-  });
-  console.log('[Auth] Firebase fully initialized');
-}catch(e){console.error('[Auth] Firebase init FAILED:',e.message,e);}
+console.log('[Auth] Supabase script starting...');
+supabase.auth.onAuthStateChange(function(event,session){
+  currentUser=session?session.user:null;
+  console.log('[Auth] State:',currentUser?currentUser.email:'signed out');
+  var btn=document.getElementById('authBtn');
+  if(btn){
+    if(currentUser){btn.textContent=currentUser.user_metadata&&currentUser.user_metadata.display_name?currentUser.user_metadata.display_name:currentUser.email;btn.onclick=function(){supabase.auth.signOut();};}
+    else{btn.textContent='Sign In';btn.onclick=showAuthModal;}
+  }
+});
+supabase.auth.getSession().then(function(res){
+  if(res.data.session){currentUser=res.data.session.user;var btn=document.getElementById('authBtn');if(btn){btn.textContent=currentUser.user_metadata&&currentUser.user_metadata.display_name?currentUser.user_metadata.display_name:currentUser.email;btn.onclick=function(){supabase.auth.signOut();};}}
+  console.log('[Auth] Supabase ready');
+});
 
 function showAuthModal(){
   var m=document.getElementById('authModal');
@@ -322,15 +320,15 @@ function showAuthModal(){
       var b=document.createElement('button');b.textContent=text;b.style.cssText=style;b.onclick=onclick;c.appendChild(b);return b;
     }
     addBtn('Sign In','width:100%;background:#6EC9E0;color:#03101B;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:0;',function(){
-      firebase.auth().signInWithEmailAndPassword(document.getElementById('auth-email').value,document.getElementById('auth-password').value).then(function(){m.style.display='none';}).catch(function(e){errDiv.textContent=e.message;errDiv.style.display='block';});
+      supabase.auth.signInWithPassword({email:document.getElementById('auth-email').value,password:document.getElementById('auth-password').value}).then(function(){m.style.display='none';}).catch(function(e){errDiv.textContent=e.message;errDiv.style.display='block';});
     });
     var orDiv=document.createElement('div');orDiv.style.cssText='text-align:center;margin:20px 0;position:relative;color:#526375;font-size:12px;';orDiv.innerHTML='<div style="position:absolute;left:0;top:50%;width:100%;height:1px;background:rgba(139,178,201,0.14);"></div><span style="background:#0D1B29;padding:0 12px;position:relative;">or</span>';c.appendChild(orDiv);
     addBtn('Continue with Google','width:100%;background:#122336;border:1px solid rgba(139,178,201,0.28);color:#EAF3F8;padding:14px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;',function(){
-      firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function(){m.style.display='none';}).catch(function(e){errDiv.textContent=e.message;errDiv.style.display='block';});
+      supabase.auth.signInWithOAuth({provider:'google'}).catch(function(e){errDiv.textContent=e.message;errDiv.style.display='block';});
     });
     var sw=document.createElement('p');sw.style.cssText='text-align:center;font-size:12px;color:#8CA3B4;margin-top:20px;';
     var swLink=document.createElement('a');swLink.href='#';swLink.textContent='Sign Up';swLink.style.cssText='color:#6EC9E0;text-decoration:none;';
-    swLink.onclick=function(e){e.preventDefault();var email=document.getElementById('auth-email').value;var pw=document.getElementById('auth-password').value;var name=prompt('Enter your name:');if(!email||!pw){alert('Enter email and password first');return;}firebase.auth().createUserWithEmailAndPassword(email,pw).then(function(c){return name?c.user.updateProfile({displayName:name}):null;}).then(function(){m.style.display='none';}).catch(function(e){errDiv.textContent=e.message;errDiv.style.display='block';});};
+    swLink.onclick=function(e){e.preventDefault();var email=document.getElementById('auth-email').value;var pw=document.getElementById('auth-password').value;var name=prompt('Enter your name:');if(!email||!pw){alert('Enter email and password first');return;}supabase.auth.signUp({email:email,password:pw,options:{data:{display_name:name||''}}}).then(function(){m.style.display='none';}).catch(function(e){errDiv.textContent=e.message;errDiv.style.display='block';});};
     sw.appendChild(document.createTextNode('No account? '));
     sw.appendChild(swLink);
     c.appendChild(sw);

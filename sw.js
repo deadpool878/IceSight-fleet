@@ -1,4 +1,4 @@
-const CACHE_NAME = 'icesight-v2';
+const CACHE_NAME = 'icesight-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,7 +6,7 @@ const ASSETS = [
   '/dashboard.html',
   '/view-advisory.html',
   '/logo.png',
-  '/firebase-config.js'
+  '/manifest.json'
 ];
 
 // Install — cache core files
@@ -25,12 +25,12 @@ self.addEventListener('activate', e => {
 
 // Fetch — network first, fallback to cache
 self.addEventListener('fetch', e => {
-  // Skip non-GET and external requests (Firebase, TensorFlow, fonts)
+  // Skip non-GET and external requests (Supabase, TensorFlow, fonts)
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
-  // For CDN resources (Firebase, TF.js, fonts) — cache first
-  if (url.hostname.includes('gstatic.com') || url.hostname.includes('cdn.jsdelivr.net') || url.hostname.includes('fonts.googleapis.com')) {
+  // For CDN resources (Supabase, TF.js, fonts) — cache first
+  if (url.hostname.includes('cdn.jsdelivr.net') || url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
     e.respondWith(
       caches.match(e.request).then(cached => {
         if (cached) return cached;
@@ -44,8 +44,8 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // For Open-Meteo API — network only (can't cache live weather)
-  if (url.hostname.includes('open-meteo.com')) return;
+  // For Supabase API and Open-Meteo — network only (can't cache live data)
+  if (url.hostname.includes('supabase.co') || url.hostname.includes('open-meteo.com')) return;
 
   // For local files — network first, cache fallback
   e.respondWith(
